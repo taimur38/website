@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Taimur Shah — I research why countries stay poor, and design policies and products to change it.">
+  <title>Taimur Shah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <style>
+    /* ── Variables ──────────────────────────────────────────── */
+    :root {
+      --bg:     #fafaf8;
+      --fg:     #1a1a18;
+      --muted:  #888;
+      --border: #e2e2de;
+      --serif:   'Source Serif 4', Georgia, serif;
+      --display: 'Crimson Pro', Georgia, serif;
+      --sans:    'Inter', system-ui, -apple-system, sans-serif;
+      --mono:    'SF Mono', 'Fira Mono', 'Cascadia Mono', monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:     #111110;
+        --fg:     #e4e4e0;
+        --muted:  #666;
+        --border: #252523;
+      }
+    }
+
+    /* ── Reset ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Base ───────────────────────────────────────────────── */
+    html { font-size: 17px; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--serif);
+      line-height: 1.65;
+      padding: 4rem 1.5rem 3rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-decoration-color: var(--border);
+      text-underline-offset: 3px;
+      transition: text-decoration-color 0.15s;
+    }
+    a:hover { text-decoration-color: var(--fg); }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 1.1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2.75rem;
+    }
+    .site-name {
+      font-family: var(--display);
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+    nav {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      margin-left: 1.5rem;
+    }
+    nav a:hover { color: var(--fg); }
+
+    /* ── Intro ──────────────────────────────────────────────── */
+    .intro {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      margin-bottom: 3rem;
+    }
+    .intro-visual {
+      flex-shrink: 0;
+      width: 108px;
+      height: 108px;
+    }
+    .intro-photo {
+      width: 108px;
+      height: 108px;
+      object-fit: cover;
+      display: block;
+    }
+    .mobius-canvas {
+      width: 108px;
+      height: 108px;
+      display: block;
+    }
+    .tagline {
+      font-family: var(--display);
+      font-size: 1.15rem;
+      line-height: 1.5;
+      margin-bottom: 0.6rem;
+    }
+    .ext-links {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 1.1rem;
+    }
+    .ext-links a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .ext-links a:hover { color: var(--fg); }
+
+    /* ── Section label ──────────────────────────────────────── */
+    .label {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0;
+    }
+
+    /* ── Projects ───────────────────────────────────────────── */
+    section { margin-bottom: 3rem; }
+    .project {
+      padding: 1.1rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .project:last-child { border-bottom: 1px solid var(--border); }
+    .project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    .project-title {
+      font-family: var(--sans);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+    .project-context {
+      font-family: var(--sans);
+      font-size: 0.76rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .project-desc {
+      font-size: 0.88rem;
+      line-height: 1.6;
+      margin-top: 0.35rem;
+    }
+    .project-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .project-links a {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1px;
+    }
+    .project-links a:hover { color: var(--fg); border-bottom-color: var(--fg); }
+
+    /* ── Bio ────────────────────────────────────────────────── */
+    .bio p {
+      font-size: 0.92rem;
+      line-height: 1.7;
+      margin-bottom: 0.9rem;
+    }
+    .bio p:last-child { margin-bottom: 0; }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    footer {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding-top: 1.1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      body { padding: 2.75rem 1.25rem 2.5rem; }
+    }
+    @media (max-width: 480px) {
+      body { padding: 2rem 1rem 2rem; font-size: 16px; }
+      header { flex-wrap: wrap; gap: 0.5rem; }
+      .intro { flex-direction: column; gap: 1rem; }
+      .intro-visual, .intro-photo, .mobius-canvas { width: 72px; height: 72px; }
+      .project-header { flex-direction: column; gap: 0.15rem; }
+      .project-links { gap: 0.4rem 0.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="site-name">Taimur Shah</span>
+    <nav>
+      <a href="/resume.html">resume</a>
+      <a href="#" onclick="this.href='mailto:'+['taimur38','gmail.com'].join('@')">contact</a>
+    </nav>
+  </header>
+
+  <div class="intro">
+    <div class="intro-visual">
+      <!-- swap for <img class="intro-photo" src="photo.jpg" alt="Taimur Shah"> once photo is ready -->
+      <canvas id="mobius" class="mobius-canvas"></canvas>
+    </div>
+    <div class="intro-body">
+      <p class="tagline">I research why countries stay poor, and design policies and products to change it. My research focus is on agriculture and cities, using growth diagnostics and economic complexity. I'm also CTO of <a href="https://www.beaj.org/">Beaj</a>, which uses WhatsApp to teach underserved populations.</p>
+      <div class="ext-links">
+        <a href="https://github.com/taimur38">GitHub</a>
+        <a href="https://twitter.com/taimur38">Twitter</a>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <p class="label">About</p>
+    <div class="bio">
+      <p>I am interested in the type of interventions and ideas that could improve the lives of millions of people, particularly at the bottom of the pyramid. I have been convinced that <a href="https://lantpritchett.org/wp-content/uploads/2022/03/Basics-legatum-paper_SEJ_submission.pdf">economic growth</a> is the way to do this, and that <a href="https://drodrik.scholars.harvard.edu/sites/g/files/omnuum7106/files/dani-rodrik/files/growth-diagnostics.pdf">growth diagnostics</a> is the best way to figure out why it isn't happening in a particular place.</p>
+      <p>When you want to solve problems at that scale, I have found that the ideal solutions are often policy solutions — so I spend a lot of my effort on policy advisory. Implementing policy, however, requires many stars to align — you sometimes need to get lucky with a window for change opening up. The private sector is a more permissionless arena of action, where if you build the right products and organizations you can create a perpetual positive impact machine that can scale. In this way, I think of myself as a full stack problem solver — thinking about big questions and trying to address them with whatever means is practical.</p>
+    </div>
+  </section>
+
+  <!--
+  <section>
+    <p class="label">Current Projects</p>
+
+    <div class="project">
+      <div class="project-header">
+        <span class="project-title">Growth Diagnostic of Morocco</span>
+        <span class="project-context">Growth Lab</span>
+      </div>
+      <p class="project-desc">National growth diagnostic focused on climate and agriculture shocks, structural transformation, and the inclusion of women in the economy.</p>
+    </div>
+
+    <div class="project">
+      <div class="project-header">
+        <span class="project-title">Water and Growth in Hermosillo, Mexico</span>
+        <span class="project-context">Growth Lab</span>
+      </div>
+      <p class="project-desc">Subnational growth diagnostic identifying water allocation as the binding constraint to city growth. Integrated spatial equilibrium into subnational growth diagnostics.</p>
+      <div class="project-links">
+        <a href="https://growthlab.hks.harvard.edu/publication/green-growth-opportunities-for-hermosillo-supplying-the-global-energy-transition/" target="_blank">Green Growth Opportunities for Hermosillo ↗</a>
+        <a href="https://growthlab.hks.harvard.edu/publication/growth-through-diversification-in-hermosillo/" target="_blank">Growth Through Diversification ↗</a>
+        <a href="https://growthlab.hks.harvard.edu/publication/una-estrategia-de-crecimiento-economico-para-hermosillo/" target="_blank">Estrategia de Crecimiento Económico ↗</a>
+      </div>
+    </div>
+
+    <div class="project">
+      <div class="project-header">
+        <span class="project-title">Racial Inclusion in American Cities</span>
+        <span class="project-context">Growth Lab</span>
+      </div>
+      <p class="project-desc">Economic complexity analysis of racial inclusion at the industry level. Built diagnostic tools and produced policy analysis for the Mayor's office in Cleveland.</p>
+      <div class="project-links">
+        <a href="https://growthlab.hks.harvard.edu/publication/teaching-case-spurring-inclusive-growth-in-cleveland-ohio/" target="_blank">Spurring Inclusive Growth in Cleveland ↗</a>
+      </div>
+    </div>
+
+    <div class="project">
+      <div class="project-header">
+        <span class="project-title">UAE Carbon Capture and Green Growth</span>
+        <span class="project-context">Growth Lab</span>
+      </div>
+      <p class="project-desc">Industrial policy strategy for Carbon Capture, Utilization and Storage to support the UAE's green growth initiatives.</p>
+    </div>
+
+    <div class="project">
+      <div class="project-header">
+        <span class="project-title">Regenerative Agriculture and Climate Trade</span>
+        <span class="project-context">World Bank</span>
+      </div>
+      <p class="project-desc">Two engagements: regenerative agriculture policy in South Asia, and climate policy scenarios in a global trade model.</p>
+    </div>
+
+  </section>
+  -->
+
+
+  <footer>taimur.sh</footer>
+
+  <script>
+    (function () {
+      var c = document.getElementById('mobius');
+      var ctx = c.getContext('2d');
+      var dpr = window.devicePixelRatio || 1;
+      var S = 108;
+      c.width = S * dpr;
+      c.height = S * dpr;
+      c.style.width = S + 'px';
+      c.style.height = S + 'px';
+      ctx.scale(dpr, dpr);
+
+      var R = 1, W = 0.38;
+      var t = 0;
+
+      function pt(u, v) {
+        var h = u / 2;
+        var cv = Math.cos(h), sv = Math.sin(h);
+        var cu = Math.cos(u), su = Math.sin(u);
+        return [
+          (R + W * v * cv) * cu,
+          (R + W * v * cv) * su,
+          W * v * sv
+        ];
+      }
+
+      function proj(p) {
+        var x = p[0], y = p[1], z = p[2];
+        var ax = Math.sin(t * 0.7) * 0.6 + t * 0.12;
+        var ay = t * 0.18;
+        var ca = Math.cos(ax), sa = Math.sin(ax);
+        var y1 = y * ca - z * sa;
+        var z1 = y * sa + z * ca;
+        var cb = Math.cos(ay), sb = Math.sin(ay);
+        var x2 = x * cb + z1 * sb;
+        return [S / 2 + x2 * 34, S / 2 + y1 * 34];
+      }
+
+      function stroke(v, steps) {
+        ctx.beginPath();
+        for (var i = 0; i <= steps; i++) {
+          var u = (i / steps) * Math.PI * 2;
+          var p = proj(pt(u, v));
+          i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]);
+        }
+        ctx.stroke();
+      }
+
+      var fg = '';
+      function readFg() {
+        fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
+      }
+      readFg();
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readFg);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        ctx.strokeStyle = fg;
+
+        ctx.lineWidth = 1.2;
+        ctx.globalAlpha = 0.75;
+        stroke(1, 180);
+        stroke(-1, 180);
+
+        ctx.lineWidth = 0.7;
+        ctx.globalAlpha = 0.2;
+        stroke(0, 180);
+
+        ctx.globalAlpha = 0.1;
+        ctx.lineWidth = 0.5;
+        for (var i = 0; i < 16; i++) {
+          var u = (i / 16) * Math.PI * 2;
+          ctx.beginPath();
+          for (var j = 0; j <= 8; j++) {
+            var v = -1 + (j / 8) * 2;
+            var p = proj(pt(u, v));
+            j === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]);
+          }
+          ctx.stroke();
+        }
+
+        t += 0.006;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+  </script>
+</body>
+</html>

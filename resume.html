@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume — Taimur Shah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <style>
+    :root {
+      --bg:     #fafaf8;
+      --fg:     #1a1a18;
+      --muted:  #888;
+      --border: #e2e2de;
+      --serif:   'Source Serif 4', Georgia, serif;
+      --display: 'Crimson Pro', Georgia, serif;
+      --sans:    'Inter', system-ui, -apple-system, sans-serif;
+      --mono:    'SF Mono', 'Fira Mono', 'Cascadia Mono', monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:     #111110;
+        --fg:     #e4e4e0;
+        --muted:  #666;
+        --border: #252523;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 17px; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--serif);
+      line-height: 1.65;
+      padding: 4rem 1.5rem 3rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-decoration-color: var(--border);
+      text-underline-offset: 3px;
+      transition: text-decoration-color 0.15s;
+    }
+    a:hover { text-decoration-color: var(--fg); }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 1.1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2.75rem;
+    }
+    .site-name {
+      font-family: var(--display);
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+    nav {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      margin-left: 1.5rem;
+    }
+    nav a:hover { color: var(--fg); }
+
+    /* ── Page header ────────────────────────────────────────── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 2.5rem;
+    }
+    .page-title {
+      font-family: var(--display);
+      font-size: 1.35rem;
+      font-weight: 400;
+    }
+    .download {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1px;
+    }
+    .download:hover { color: var(--fg); border-bottom-color: var(--fg); }
+
+    /* ── Section label ──────────────────────────────────────── */
+    .label {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 0;
+    }
+
+    /* ── Work entries ───────────────────────────────────────── */
+    section { margin-bottom: 3rem; }
+    .work-entry {
+      padding: 0.65rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .work-entry:last-child { border-bottom: 1px solid var(--border); }
+    .work-entry summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      font-family: var(--sans);
+      font-size: 0.88rem;
+    }
+    .work-entry summary::-webkit-details-marker { display: none; }
+    .work-entry summary::marker { display: none; content: ''; }
+    .work-entry summary:hover .work-role,
+    .work-entry summary:hover .work-org { color: var(--muted); }
+    .work-role { font-weight: 400; transition: color 0.15s; }
+    .work-at { color: var(--muted); }
+    .work-org { font-weight: 600; transition: color 0.15s; }
+    .work-chevron {
+      display: inline-block;
+      font-size: 0.55rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      transition: transform 0.25s ease;
+    }
+    .work-entry[open] .work-chevron {
+      transform: rotate(90deg);
+    }
+    .work-summary-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .work-year {
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+    .work-detail {
+      margin-top: 0.6rem;
+      padding-left: 1rem;
+      border-left: 2px solid var(--border);
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.25s ease;
+    }
+    .work-location {
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .work-detail p {
+      font-size: 0.88rem;
+      line-height: 1.6;
+      margin-bottom: 0.4rem;
+    }
+    .work-detail p:last-child { margin-bottom: 0; }
+
+    /* ── Education ──────────────────────────────────────────── */
+    .edu-entry {
+      padding: 0.9rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .edu-entry:last-child { border-bottom: 1px solid var(--border); }
+    .edu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    .edu-school {
+      font-family: var(--sans);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+    .edu-year {
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .edu-degree {
+      font-size: 0.88rem;
+      margin-top: 0.2rem;
+    }
+    .edu-desc {
+      font-size: 0.84rem;
+      line-height: 1.6;
+      color: var(--muted);
+      margin-top: 0.3rem;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    footer {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding-top: 1.1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      body { padding: 2.75rem 1.25rem 2.5rem; }
+    }
+    @media (max-width: 480px) {
+      body { padding: 2rem 1rem 2rem; font-size: 16px; }
+      header { flex-wrap: wrap; gap: 0.5rem; }
+      .page-header { flex-direction: column; gap: 0.5rem; }
+      .work-entry summary { flex-wrap: wrap; }
+      .edu-header { flex-direction: column; gap: 0.15rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="site-name" style="text-decoration:none">Taimur Shah</a>
+    <nav>
+      <a href="#" onclick="this.href='mailto:'+['taimur38','gmail.com'].join('@')">contact</a>
+    </nav>
+  </header>
+
+  <div class="page-header">
+    <span class="page-title">Resume</span>
+    <a class="download" href="/resume.pdf" target="_blank">Download PDF ↗</a>
+  </div>
+
+  <section>
+    <p class="label">Experience</p>
+
+    <details class="work-entry">
+      <summary>
+        <span class="work-chevron">&#9654;</span>
+        <span class="work-summary-text"><span class="work-role">Research Fellow</span> <span class="work-at">at</span> <span class="work-org">The Growth Lab at Harvard Kennedy School</span></span>
+        <span class="work-year">2023–</span>
+      </summary>
+      <div class="work-detail">
+        <p class="work-location">Cambridge, Massachusetts</p>
+        <p>Co-authored a growth diagnostic of Morocco, focusing on climate and agriculture shocks, structural transformation and the inclusion of women in the economy.</p>
+        <p>Co-authored a subnational growth diagnostic of Hermosillo, Mexico, focusing on the role of water in the economy. Integrated an understanding of spatial equilibrium into subnational growth diagnostics.</p>
+        <p>Developed industrial policy strategy for the United Arab Emirates on Carbon Capture, Utilization and Storage to support Green Growth initiatives. Pushed forward the Growth Lab's understanding of Carbon Dioxide Removals and its relationship to Green Growth.</p>
+        <p>Developed original research on Racial Inclusion in American cities using an Economic Complexity lens at the industry level. Designed and built digital tools to facilitate a racial inclusion diagnostics. Leveraged Racial Inclusion research to produce original analysis on policies under consideration in Cleveland for the Mayor's office.</p>
+      </div>
+    </details>
+
+    <details class="work-entry">
+      <summary>
+        <span class="work-chevron">&#9654;</span>
+        <span class="work-summary-text"><span class="work-role">Chief Technology Officer</span> <span class="work-at">at</span> <span class="work-org">Beaj</span></span>
+        <span class="work-year">2023–</span>
+      </summary>
+      <div class="work-detail">
+        <p class="work-location">Cambridge, Massachusetts</p>
+        <p>Define and lead Beaj's technology strategy, harnessing modern architectures, AI services, and conversational interfaces (e.g., WhatsApp bots) to scale impact and advance the organization's mission.</p>
+      </div>
+    </details>
+
+    <details class="work-entry">
+      <summary>
+        <span class="work-chevron">&#9654;</span>
+        <span class="work-summary-text"><span class="work-role">Short-Term Consultant</span> <span class="work-at">at</span> <span class="work-org">World Bank</span></span>
+        <span class="work-year">2025</span>
+      </summary>
+      <div class="work-detail">
+        <p>Research on regenerative agriculture in South Asia.</p>
+        <p>Optimizing a global trade model incorporating climate policy scenarios.</p>
+      </div>
+    </details>
+
+    <details class="work-entry">
+      <summary>
+        <span class="work-chevron">&#9654;</span>
+        <span class="work-summary-text"><span class="work-role">Economic Advisor</span> <span class="work-at">at</span> <span class="work-org">ASPIRE</span></span>
+        <span class="work-year">2022</span>
+      </summary>
+      <div class="work-detail">
+        <p class="work-location">Agency for Strategic Planning and Reforms · Astana, Kazakhstan</p>
+        <p>Primary focus on developing Industrial Policy recommendations. Analyzed existing structure of state support for industry in Kazakhstan, identified areas for improvement and alignment with identified market failures. Proposed improvements in existing policies and improved institutional process for formulating new policies.</p>
+      </div>
+    </details>
+
+    <details class="work-entry">
+      <summary>
+        <span class="work-chevron">&#9654;</span>
+        <span class="work-summary-text"><span class="work-role">Associate Director &amp; Founder</span> <span class="work-at">at</span> <span class="work-org">CERP Labs</span></span>
+        <span class="work-year">2018–21</span>
+      </summary>
+      <div class="work-detail">
+        <p class="work-location">Centre for Economic Research in Pakistan · Lahore, Pakistan</p>
+        <p>Founded the CERP Labs team, a revenue-generating software development unit within a research institution, focused on addressing issues that impede economic growth in developing countries. Built financially sustainable model, organizational capacity and trained a first-in-class software development team. Collaborated with research teams, private sector partners and international development organizations. Established and led projects in Education, Healthcare and COVID-19 related monitoring and economic recovery.</p>
+        <p><strong>MISchool</strong> — Led product design and development of the School Management application targeting low-cost private schools in Pakistan. Designed sales strategy, built a sales team and led roll-out of the app to over 700 schools and 80,000 students across 6 districts of Punjab.</p>
+        <p><strong>IlmExchange</strong> — Led product development of an education platform comprised of several components addressing systemic constraints to education outcomes as identified by LEAPS research. Led a team which built a marketplace connecting low-cost private schools and education service providers, an emergency student learning portal during COVID school closures, and merged capabilities with the MISchool application to better mitigate learning losses.</p>
+        <p><strong>World Bank: Mapping Food Insecurity in Karachi</strong> — Designed, led and won proposal with the World Bank to build an interactive dashboard visualizing food insecurity hot-spots in informal settlements in Karachi. Collaboratively designed and rapidly produced tool for government officials in the wake of COVID-19 lockdowns, and augmented the dashboard to support a wide range of indicators across cities and survey sources.</p>
+        <p><strong>Economic Vulnerability Assessment</strong> — Conceptualized and advocated for a public assessment to quantify the economic impact of COVID-19 and lockdowns on populations in Punjab. Brought Principal Investigators on-board and secured funding. Managed multi-round survey activity based on a random digit dial sample, and produced multiple publicly distributed reports.</p>
+      </div>
+    </details>
+
+    <details class="work-entry">
+      <summary>
+        <span class="work-chevron">&#9654;</span>
+        <span class="work-summary-text"><span class="work-role">Software Architect</span> <span class="work-at">at</span> <span class="work-org">IBM Watson</span></span>
+        <span class="work-year">2014–18</span>
+      </summary>
+      <div class="work-detail">
+        <p class="work-location">Cognitive Environments · New York City, NY</p>
+        <p>Worked on over a dozen projects and products, ranging from architecting and building modern web applications, to researching, designing and building distributed, graphics-intensive applications on OpenGL.</p>
+        <p><strong>CogEnv</strong> — Architected and led development of core software library as well as a rich set of agents to manage distributed, multimodal inputs and outputs enriched by Watson. This enabled downstream developers to create plugins and applications for cognitive environments.</p>
+        <p><strong>Election Explorer</strong> — Led development of and built knowledge graph service of political data around contributions, news, legislative activity and lobbyist info. Exposed the data through a custom-built question/answer interface and APIs. Architected frontend web application, enabling a large development team to work efficiently simultaneously. Designed and built interactive graph visualization to facilitate graph traversal of political data in an intuitive way.</p>
+        <p><strong>Toomba</strong> — Designed, pitched and led development. Generates a knowledge graph from unstructured natural language using several independent Watson services. Enables developers to use different databases to host the Graph. Wrote plugins for Neo4J, SQL, Gremlin and Redis backends. Led a team in creating several Question-Answer services built on top of Toomba using both Neo4J and Postgres backends.</p>
+        <p><strong>Toombot</strong> — Authored and presented thesis on using AI as an agent-in-the-middle to enrich conversations between humans. Architected and built a conversational framework leveraging Watson services to realize this vision.</p>
+      </div>
+    </details>
+
+    <details class="work-entry">
+      <summary>
+        <span class="work-chevron">&#9654;</span>
+        <span class="work-summary-text"><span class="work-role">VP of Engineering</span> <span class="work-at">at</span> <span class="work-org">Parrable</span></span>
+        <span class="work-year">2013–14</span>
+      </summary>
+      <div class="work-detail">
+        <p class="work-location">New York City, NY</p>
+        <p>Led data analysis and advertising operations for several clients. Actively assisted in fundraising and business development. Full-stack developer. Converted Clossit backend and infrastructure to support business pivot from destination site to advertising. Developed multiple customized products for clients.</p>
+      </div>
+    </details>
+
+    <details class="work-entry">
+      <summary>
+        <span class="work-chevron">&#9654;</span>
+        <span class="work-summary-text"><span class="work-role">Co-Founder</span> <span class="work-at">at</span> <span class="work-org">Clossit</span> <span class="work-at">(acq.)</span></span>
+        <span class="work-year">2011–13</span>
+      </summary>
+      <div class="work-detail">
+        <p class="work-location">New York City, NY</p>
+        <p>Consumer-facing site where users could browse a large database of clothes and curate personal collections shared with followers. Designed to better reflect the social aspects of fashion through a digital medium; the system learned user preferences and made recommendations accordingly. Full-stack developer building the site and apps. Successfully led the sale of the company to Parrable in 2013.</p>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <p class="label">Education</p>
+
+    <div class="edu-entry">
+      <div class="edu-header">
+        <span class="edu-school">Harvard University, John F. Kennedy School of Government</span>
+        <span class="edu-year">2023</span>
+      </div>
+      <p class="edu-degree">Master in Public Administration in International Development</p>
+      <p class="edu-desc">Rigorous and quantitatively intensive set of core classes in Development Economics. Personal focus on Macroeconomics, Climate Change, Energy Systems, Agriculture, and Social Enterprises. Founder and President of the South Asia Caucus at HKS.</p>
+    </div>
+
+    <div class="edu-entry">
+      <div class="edu-header">
+        <span class="edu-school">Columbia University, Fu Foundation School of Engineering and Applied Science</span>
+        <span class="edu-year">2014</span>
+      </div>
+      <p class="edu-degree">Bachelor of Science, Computer Science</p>
+      <p class="edu-desc">Focus on Computational Theory and Machine Learning. Minor in Economics — focus on Development Economics and Game Theory.</p>
+    </div>
+  </section>
+
+  <footer>taimur.sh</footer>
+
+  <script>
+    document.querySelectorAll('.work-entry').forEach(function (el) {
+      var summary = el.querySelector('summary');
+      var detail = el.querySelector('.work-detail');
+      summary.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (el.open) {
+          detail.style.maxHeight = detail.scrollHeight + 'px';
+          detail.offsetHeight; // force reflow
+          detail.style.maxHeight = '0';
+          detail.style.opacity = '0';
+          detail.addEventListener('transitionend', function handler() {
+            detail.removeEventListener('transitionend', handler);
+            el.open = false;
+            detail.style.maxHeight = '';
+            detail.style.opacity = '';
+          });
+        } else {
+          el.open = true;
+          var h = detail.scrollHeight;
+          detail.style.maxHeight = '0';
+          detail.style.opacity = '0';
+          detail.offsetHeight; // force reflow
+          detail.style.maxHeight = h + 'px';
+          detail.style.opacity = '1';
+          detail.addEventListener('transitionend', function handler() {
+            detail.removeEventListener('transitionend', handler);
+            detail.style.maxHeight = '';
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
