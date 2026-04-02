@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flocking — Taimur Shah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <style>
+    :root {
+      --bg:     #fafaf8;
+      --fg:     #1a1a18;
+      --muted:  #888;
+      --border: #e2e2de;
+      --display: 'Crimson Pro', Georgia, serif;
+      --sans:    'Inter', system-ui, -apple-system, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:     #111110;
+        --fg:     #e4e4e0;
+        --muted:  #666;
+        --border: #252523;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Source Serif 4', Georgia, serif;
+      line-height: 1.65;
+    }
+
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 1.2rem 1.5rem;
+      background: color-mix(in srgb, var(--bg) 85%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    .site-name {
+      font-family: var(--display);
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+    .site-name a {
+      color: inherit;
+      text-decoration: none;
+    }
+    nav {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      margin-left: 1.5rem;
+      transition: color 0.15s;
+    }
+    nav a:hover { color: var(--fg); }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="site-name"><a href="/">Taimur Shah</a></span>
+    <nav>
+      <a href="/">home</a>
+      <a href="/resume.html">work</a>
+      <a href="/visuals.html">visuals</a>
+      <a href="#" onclick="this.href='mailto:'+['taimur38','gmail.com'].join('@')">contact</a>
+    </nav>
+  </header>
+  <canvas id="c"></canvas>
+
+  <script>
+  "use strict";
+  // ── Configuration ──────────────────────────────────────────
+  const NUM_BOIDS    = 300;
+  const TRAIL_LEN    = 4;
+  const SEP_RADIUS   = 25;
+  const ALI_RADIUS   = 50;
+  const COH_RADIUS   = 50;
+  const CONN_RADIUS  = 40;
+  const MAX_SPEED    = 3.0;
+  const MIN_SPEED    = 1.0;
+  const SEP_WEIGHT   = 1.5;
+  const ALI_WEIGHT   = 1.0;
+  const COH_WEIGHT   = 1.0;
+  const RAND_WEIGHT  = 0.15;
+  const MAX_FORCE    = 0.15;
+  const CELL_SIZE    = 50; // spatial hash cell size
+
+  // ── WebGL2 Setup ───────────────────────────────────────────
+  const canvas = document.getElementById('c');
+  const gl = canvas.getContext('webgl2', { alpha: false, antialias: true });
+  if (!gl) { document.body.textContent = 'WebGL2 not supported'; throw new Error('No WebGL2'); }
+
+  let W, H, dpr;
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ── Color Parsing ──────────────────────────────────────────
+  function parseCSSColor(varName) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    const d = document.createElement('div');
+    d.style.color = v;
+    document.body.appendChild(d);
+    const c = getComputedStyle(d).color;
+    document.body.removeChild(d);
+    const m = c.match(/(\d+)/g);
+    return m ? [+m[0]/255, +m[1]/255, +m[2]/255] : [0,0,0];
+  }
+
+  let fgColor, bgColor;
+  function updateColors() {
+    fgColor = parseCSSColor('--fg');
+    bgColor = parseCSSColor('--bg');
+  }
+  updateColors();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateColors);
+
+  // ── Shader Compilation ─────────────────────────────────────
+  function compileShader(src, type) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error('Shader compile error:', gl.getShaderInfoLog(s));
+      gl.deleteShader(s);
+      return null;
+    }
+    return s;
+  }
+
+  function createProgram(vsSrc, fsSrc) {
+    const vs = compileShader(vsSrc, gl.VERTEX_SHADER);
+    const fs = compileShader(fsSrc, gl.FRAGMENT_SHADER);
+    if (!vs || !fs) return null;
+    const p = gl.createProgram();
+    gl.attachShader(p, vs);
+    gl.attachShader(p, fs);
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(p));
+      return null;
+    }
+    return p;
+  }
+
+  // ── Boid Shader ────────────────────────────────────────────
+  const boidVS = `#version 300 es
+    in vec2 a_vertex;
+    in vec2 a_position;
+    in float a_angle;
+    in float a_alpha;
+    uniform vec2 u_resolution;
+    out float v_alpha;
+    void main() {
+      float c = cos(a_angle), s = sin(a_angle);
+      mat2 rot = mat2(c, s, -s, c);
+      vec2 pos = a_position + rot * a_vertex;
+      vec2 clip = (pos / u_resolution) * 2.0 - 1.0;
+      clip.y *= -1.0;
+      gl_Position = vec4(clip, 0.0, 1.0);
+      v_alpha = a_alpha;
+    }
+  `;
+
+  const boidFS = `#version 300 es
+    precision mediump float;
+    uniform vec4 u_color;
+    in float v_alpha;
+    out vec4 fragColor;
+    void main() {
+      fragColor = vec4(u_color.rgb, u_color.a * v_alpha);
+    }
+  `;
+
+  // ── Line Shader ────────────────────────────────────────────
+  const lineVS = `#version 300 es
+    in vec2 a_position;
+    in float a_alpha;
+    uniform vec2 u_resolution;
+    out float v_alpha;
+    void main() {
+      vec2 clip = (a_position / u_resolution) * 2.0 - 1.0;
+      clip.y *= -1.0;
+      gl_Position = vec4(clip, 0.0, 1.0);
+      v_alpha = a_alpha;
+    }
+  `;
+
+  const lineFS = `#version 300 es
+    precision mediump float;
+    uniform vec4 u_color;
+    in float v_alpha;
+    out vec4 fragColor;
+    void main() {
+      fragColor = vec4(u_color.rgb, u_color.a * v_alpha);
+    }
+  `;
+
+  const boidProg = createProgram(boidVS, boidFS);
+  const lineProg = createProgram(lineVS, lineFS);
+
+  // ── Boid Program Locations ─────────────────────────────────
+  const bLoc = {
+    a_vertex:    gl.getAttribLocation(boidProg, 'a_vertex'),
+    a_position:  gl.getAttribLocation(boidProg, 'a_position'),
+    a_angle:     gl.getAttribLocation(boidProg, 'a_angle'),
+    a_alpha:     gl.getAttribLocation(boidProg, 'a_alpha'),
+    u_resolution: gl.getUniformLocation(boidProg, 'u_resolution'),
+    u_color:     gl.getUniformLocation(boidProg, 'u_color'),
+  };
+
+  const lLoc = {
+    a_position:  gl.getAttribLocation(lineProg, 'a_position'),
+    a_alpha:     gl.getAttribLocation(lineProg, 'a_alpha'),
+    u_resolution: gl.getUniformLocation(lineProg, 'u_resolution'),
+    u_color:     gl.getUniformLocation(lineProg, 'u_color'),
+  };
+
+  // ── Boid Triangle Template ─────────────────────────────────
+  const BOID_VERTS = new Float32Array([
+    0, -4,   // nose
+   -2,  3,   // back left
+    2,  3    // back right
+  ]);
+
+  // ── GPU Buffers ────────────────────────────────────────────
+  // Boid template
+  const vertexBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, BOID_VERTS, gl.STATIC_DRAW);
+
+  // Instance data: position(2) + angle(1) + alpha(1) = 4 floats per boid
+  const instanceData = new Float32Array(NUM_BOIDS * 4);
+  const instanceBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, instanceData.byteLength, gl.DYNAMIC_DRAW);
+
+  // Line data: up to (connections + trails) vertices, each = position(2) + alpha(1) = 3 floats
+  const MAX_LINE_VERTS = NUM_BOIDS * 20 + NUM_BOIDS * TRAIL_LEN * 2;
+  const lineData = new Float32Array(MAX_LINE_VERTS * 3);
+  const lineBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, lineData.byteLength, gl.DYNAMIC_DRAW);
+
+  // ── Boid VAO ───────────────────────────────────────────────
+  const boidVAO = gl.createVertexArray();
+  gl.bindVertexArray(boidVAO);
+
+  // Template vertices
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuf);
+  gl.enableVertexAttribArray(bLoc.a_vertex);
+  gl.vertexAttribPointer(bLoc.a_vertex, 2, gl.FLOAT, false, 0, 0);
+
+  // Instance data
+  gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuf);
+  // a_position: 2 floats at offset 0
+  gl.enableVertexAttribArray(bLoc.a_position);
+  gl.vertexAttribPointer(bLoc.a_position, 2, gl.FLOAT, false, 16, 0);
+  gl.vertexAttribDivisor(bLoc.a_position, 1);
+  // a_angle: 1 float at offset 8
+  gl.enableVertexAttribArray(bLoc.a_angle);
+  gl.vertexAttribPointer(bLoc.a_angle, 1, gl.FLOAT, false, 16, 8);
+  gl.vertexAttribDivisor(bLoc.a_angle, 1);
+  // a_alpha: 1 float at offset 12
+  gl.enableVertexAttribArray(bLoc.a_alpha);
+  gl.vertexAttribPointer(bLoc.a_alpha, 1, gl.FLOAT, false, 16, 12);
+  gl.vertexAttribDivisor(bLoc.a_alpha, 1);
+
+  gl.bindVertexArray(null);
+
+  // ── Line VAO ───────────────────────────────────────────────
+  const lineVAO = gl.createVertexArray();
+  gl.bindVertexArray(lineVAO);
+  gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
+  gl.enableVertexAttribArray(lLoc.a_position);
+  gl.vertexAttribPointer(lLoc.a_position, 2, gl.FLOAT, false, 12, 0);
+  gl.enableVertexAttribArray(lLoc.a_alpha);
+  gl.vertexAttribPointer(lLoc.a_alpha, 1, gl.FLOAT, false, 12, 8);
+  gl.bindVertexArray(null);
+
+  // ── Boids State ────────────────────────────────────────────
+  const boids = [];
+  for (let i = 0; i < NUM_BOIDS; i++) {
+    const trail = [];
+    const px = Math.random() * W;
+    const py = Math.random() * H;
+    for (let t = 0; t < TRAIL_LEN; t++) trail.push(px, py);
+    boids.push({
+      x: px,
+      y: py,
+      vx: (Math.random() - 0.5) * 2,
+      vy: (Math.random() - 0.5) * 2,
+      trail: trail, // flat array: [x0,y0, x1,y1, ...]
+      trailIdx: 0,
+    });
+  }
+
+  // ── Spatial Hash ───────────────────────────────────────────
+  let gridCols, gridRows, grid;
+
+  function buildGrid() {
+    gridCols = Math.ceil(W / CELL_SIZE) || 1;
+    gridRows = Math.ceil(H / CELL_SIZE) || 1;
+    const totalCells = gridCols * gridRows;
+    if (!grid || grid.length !== totalCells) {
+      grid = new Array(totalCells);
+      for (let i = 0; i < totalCells; i++) grid[i] = [];
+    } else {
+      for (let i = 0; i < totalCells; i++) grid[i].length = 0;
+    }
+    for (let i = 0; i < NUM_BOIDS; i++) {
+      const b = boids[i];
+      const col = Math.min(Math.floor(b.x / CELL_SIZE), gridCols - 1);
+      const row = Math.min(Math.floor(b.y / CELL_SIZE), gridRows - 1);
+      grid[row * gridCols + col].push(i);
+    }
+  }
+
+  function* neighbors(bi) {
+    const b = boids[bi];
+    const col = Math.min(Math.floor(b.x / CELL_SIZE), gridCols - 1);
+    const row = Math.min(Math.floor(b.y / CELL_SIZE), gridRows - 1);
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const r = (row + dr + gridRows) % gridRows;
+        const c = (col + dc + gridCols) % gridCols;
+        const cell = grid[r * gridCols + c];
+        for (let k = 0; k < cell.length; k++) {
+          const j = cell[k];
+          if (j !== bi) yield j;
+        }
+      }
+    }
+  }
+
+  // ── Wrapping Distance ──────────────────────────────────────
+  function wrapDelta(d, size) {
+    if (d > size * 0.5) return d - size;
+    if (d < -size * 0.5) return d + size;
+    return d;
+  }
+
+  // ── Mouse Tracking ─────────────────────────────────────────
+  let mouseX = -1000, mouseY = -1000;
+  const MOUSE_RADIUS = 120;
+  const MOUSE_FORCE  = 3.0;
+
+  canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+  canvas.addEventListener('mouseleave', () => {
+    mouseX = -1000;
+    mouseY = -1000;
+  });
+
+  // ── Physics Step ───────────────────────────────────────────
+  function step() {
+    buildGrid();
+    for (let i = 0; i < NUM_BOIDS; i++) {
+      const b = boids[i];
+      let sepX = 0, sepY = 0, sepCount = 0;
+      let aliX = 0, aliY = 0, aliCount = 0;
+      let cohX = 0, cohY = 0, cohCount = 0;
+
+      for (const j of neighbors(i)) {
+        const o = boids[j];
+        const dx = wrapDelta(o.x - b.x, W);
+        const dy = wrapDelta(o.y - b.y, H);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.001) continue;
+
+        if (dist < SEP_RADIUS) {
+          sepX -= dx / dist;
+          sepY -= dy / dist;
+          sepCount++;
+        }
+        if (dist < ALI_RADIUS) {
+          aliX += o.vx;
+          aliY += o.vy;
+          aliCount++;
+        }
+        if (dist < COH_RADIUS) {
+          cohX += dx;
+          cohY += dy;
+          cohCount++;
+        }
+      }
+
+      let ax = 0, ay = 0;
+
+      if (sepCount > 0) {
+        ax += (sepX / sepCount) * SEP_WEIGHT;
+        ay += (sepY / sepCount) * SEP_WEIGHT;
+      }
+      if (aliCount > 0) {
+        const avgVx = aliX / aliCount;
+        const avgVy = aliY / aliCount;
+        ax += (avgVx - b.vx) * ALI_WEIGHT * 0.1;
+        ay += (avgVy - b.vy) * ALI_WEIGHT * 0.1;
+      }
+      if (cohCount > 0) {
+        const cx = cohX / cohCount;
+        const cy = cohY / cohCount;
+        ax += cx * COH_WEIGHT * 0.01;
+        ay += cy * COH_WEIGHT * 0.01;
+      }
+
+      // Mouse avoidance
+      const mdx = b.x - mouseX;
+      const mdy = b.y - mouseY;
+      const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+      if (mDist < MOUSE_RADIUS && mDist > 0.1) {
+        const strength = (1 - mDist / MOUSE_RADIUS) * MOUSE_FORCE;
+        ax += (mdx / mDist) * strength;
+        ay += (mdy / mDist) * strength;
+      }
+
+      // Random perturbation
+      ax += (Math.random() - 0.5) * RAND_WEIGHT;
+      ay += (Math.random() - 0.5) * RAND_WEIGHT;
+
+      // Clamp force
+      const fMag = Math.sqrt(ax * ax + ay * ay);
+      if (fMag > MAX_FORCE) {
+        ax = (ax / fMag) * MAX_FORCE;
+        ay = (ay / fMag) * MAX_FORCE;
+      }
+
+      b.vx += ax;
+      b.vy += ay;
+
+      // Clamp speed
+      const speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+      if (speed > MAX_SPEED) {
+        b.vx = (b.vx / speed) * MAX_SPEED;
+        b.vy = (b.vy / speed) * MAX_SPEED;
+      } else if (speed < MIN_SPEED && speed > 0.001) {
+        b.vx = (b.vx / speed) * MIN_SPEED;
+        b.vy = (b.vy / speed) * MIN_SPEED;
+      }
+
+      // Update trail (ring buffer in flat array)
+      const ti = b.trailIdx * 2;
+      b.trail[ti]     = b.x;
+      b.trail[ti + 1] = b.y;
+      b.trailIdx = (b.trailIdx + 1) % TRAIL_LEN;
+
+      // Move
+      b.x += b.vx;
+      b.y += b.vy;
+
+      // Edge wrapping
+      if (b.x < 0) b.x += W;
+      else if (b.x >= W) b.x -= W;
+      if (b.y < 0) b.y += H;
+      else if (b.y >= H) b.y -= H;
+    }
+  }
+
+  // ── Build GPU Data ─────────────────────────────────────────
+  function buildBuffers() {
+    // Instance data for boid triangles
+    for (let i = 0; i < NUM_BOIDS; i++) {
+      const b = boids[i];
+      const off = i * 4;
+      instanceData[off]     = b.x * dpr;
+      instanceData[off + 1] = b.y * dpr;
+      instanceData[off + 2] = Math.atan2(b.vy, b.vx) + Math.PI * 0.5; // rotate so nose points in direction of travel
+      instanceData[off + 3] = 0.6; // alpha
+    }
+
+    // Line data: connections + trails
+    let li = 0;
+
+    // Connections — iterate grid to avoid O(n^2)
+    for (let i = 0; i < NUM_BOIDS; i++) {
+      const b = boids[i];
+      for (const j of neighbors(i)) {
+        if (j <= i) continue; // each pair once
+        const o = boids[j];
+        const dx = wrapDelta(o.x - b.x, W);
+        const dy = wrapDelta(o.y - b.y, H);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONN_RADIUS && dist > 0.001) {
+          if (li + 6 > MAX_LINE_VERTS * 3) break;
+          const alpha = 0.03 + (1 - dist / CONN_RADIUS) * 0.09; // 0.03 to 0.12
+          lineData[li++] = b.x * dpr;
+          lineData[li++] = b.y * dpr;
+          lineData[li++] = alpha;
+          // End point relative to b (avoid wrapping visual glitch)
+          lineData[li++] = (b.x + dx) * dpr;
+          lineData[li++] = (b.y + dy) * dpr;
+          lineData[li++] = alpha;
+        }
+      }
+    }
+
+    // Trails
+    for (let i = 0; i < NUM_BOIDS; i++) {
+      const b = boids[i];
+      // Draw trail segments from oldest to newest
+      let prevX = -1, prevY = -1;
+      for (let t = 0; t < TRAIL_LEN; t++) {
+        const idx = ((b.trailIdx + t) % TRAIL_LEN) * 2;
+        const tx = b.trail[idx];
+        const ty = b.trail[idx + 1];
+        if (prevX >= 0) {
+          const dx = Math.abs(tx - prevX);
+          const dy = Math.abs(ty - prevY);
+          // Skip if wrapping caused a big jump
+          if (dx < W * 0.5 && dy < H * 0.5) {
+            if (li + 6 <= MAX_LINE_VERTS * 3) {
+              const alphaStart = 0.05 + (t / TRAIL_LEN) * 0.10;
+              const alphaEnd   = 0.05 + ((t + 1) / TRAIL_LEN) * 0.10;
+              lineData[li++] = prevX * dpr;
+              lineData[li++] = prevY * dpr;
+              lineData[li++] = alphaStart;
+              lineData[li++] = tx * dpr;
+              lineData[li++] = ty * dpr;
+              lineData[li++] = alphaEnd;
+            }
+          }
+        }
+        prevX = tx;
+        prevY = ty;
+      }
+      // Last trail segment to current position
+      if (prevX >= 0) {
+        const dx = Math.abs(b.x - prevX);
+        const dy = Math.abs(b.y - prevY);
+        if (dx < W * 0.5 && dy < H * 0.5 && li + 6 <= MAX_LINE_VERTS * 3) {
+          lineData[li++] = prevX * dpr;
+          lineData[li++] = prevY * dpr;
+          lineData[li++] = 0.15;
+          lineData[li++] = b.x * dpr;
+          lineData[li++] = b.y * dpr;
+          lineData[li++] = 0.15;
+        }
+      }
+    }
+
+    return li / 3; // number of line vertices
+  }
+
+  // ── Render ─────────────────────────────────────────────────
+  function render() {
+    step();
+    const numLineVerts = buildBuffers();
+
+    // Scale boid template by DPR
+    const scaledVerts = new Float32Array(BOID_VERTS.length);
+    for (let i = 0; i < BOID_VERTS.length; i++) scaledVerts[i] = BOID_VERTS[i] * dpr;
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, scaledVerts);
+
+    const cw = canvas.width, ch = canvas.height;
+
+    gl.clearColor(bgColor[0], bgColor[1], bgColor[2], 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    // Draw lines (connections + trails)
+    if (numLineVerts > 0) {
+      gl.useProgram(lineProg);
+      gl.uniform2f(lLoc.u_resolution, cw, ch);
+      gl.uniform4f(lLoc.u_color, fgColor[0], fgColor[1], fgColor[2], 1.0);
+      gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, lineData.subarray(0, numLineVerts * 3));
+      gl.bindVertexArray(lineVAO);
+      gl.drawArrays(gl.LINES, 0, numLineVerts);
+      gl.bindVertexArray(null);
+    }
+
+    // Draw boids
+    gl.useProgram(boidProg);
+    gl.uniform2f(bLoc.u_resolution, cw, ch);
+    gl.uniform4f(bLoc.u_color, fgColor[0], fgColor[1], fgColor[2], 1.0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, instanceData);
+    gl.bindVertexArray(boidVAO);
+    gl.drawArraysInstanced(gl.TRIANGLES, 0, 3, NUM_BOIDS);
+    gl.bindVertexArray(null);
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+  </script>
+</body>
+</html>

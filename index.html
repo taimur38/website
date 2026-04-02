@@ -33,15 +33,15 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     /* ── Base ───────────────────────────────────────────────── */
-    html { font-size: 17px; }
+    html { font-size: 17px; background: var(--bg); }
     body {
-      background: var(--bg);
       color: var(--fg);
       font-family: var(--serif);
       line-height: 1.65;
       padding: 4rem 1.5rem 3rem;
       max-width: 700px;
       margin: 0 auto;
+      position: relative;
     }
     a {
       color: inherit;
@@ -216,6 +216,7 @@
     <span class="site-name">Taimur Shah</span>
     <nav>
       <a href="/resume.html">work</a>
+      <a href="/visuals.html">visuals</a>
       <a href="#" onclick="this.href='mailto:'+['taimur38','gmail.com'].join('@')">contact</a>
     </nav>
   </header>
@@ -301,7 +302,10 @@
 
   <footer>taimur.sh</footer>
 
+  <canvas id="flock" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;"></canvas>
+
   <script>
+    // ── Möbius strip ────────────────────────────────────────────
     (function () {
       var c = document.getElementById('mobius');
       var ctx = c.getContext('2d');
@@ -385,6 +389,164 @@
         }
 
         t += 0.006;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ── Subtle flocking background ──────────────────────────────
+    (function () {
+      var c = document.getElementById('flock');
+      var ctx = c.getContext('2d');
+      var dpr = window.devicePixelRatio || 1;
+      var W, H;
+
+      function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        c.width = W * dpr;
+        c.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      var fg = '';
+      function readFg() {
+        fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
+      }
+      readFg();
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readFg);
+      }
+
+      var N = 100;
+      var CELL = 50;
+      var boids = [];
+      for (var i = 0; i < N; i++) {
+        boids.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2
+        });
+      }
+
+      var gridCols, gridRows, grid;
+      function buildGrid() {
+        gridCols = Math.ceil(W / CELL) || 1;
+        gridRows = Math.ceil(H / CELL) || 1;
+        var total = gridCols * gridRows;
+        if (!grid || grid.length !== total) {
+          grid = [];
+          for (var i = 0; i < total; i++) grid[i] = [];
+        } else {
+          for (var i = 0; i < total; i++) grid[i].length = 0;
+        }
+        for (var i = 0; i < N; i++) {
+          var b = boids[i];
+          var col = Math.min(Math.floor(b.x / CELL), gridCols - 1);
+          var row = Math.min(Math.floor(b.y / CELL), gridRows - 1);
+          if (col < 0) col = 0;
+          if (row < 0) row = 0;
+          grid[row * gridCols + col].push(i);
+        }
+      }
+
+      function wrapD(d, size) {
+        if (d > size * 0.5) return d - size;
+        if (d < -size * 0.5) return d + size;
+        return d;
+      }
+
+      function step() {
+        buildGrid();
+        for (var i = 0; i < N; i++) {
+          var b = boids[i];
+          var sepX = 0, sepY = 0, sepN = 0;
+          var aliX = 0, aliY = 0, aliN = 0;
+          var cohX = 0, cohY = 0, cohN = 0;
+          var col = Math.min(Math.max(Math.floor(b.x / CELL), 0), gridCols - 1);
+          var row = Math.min(Math.max(Math.floor(b.y / CELL), 0), gridRows - 1);
+          for (var dr = -1; dr <= 1; dr++) {
+            for (var dc = -1; dc <= 1; dc++) {
+              var r = (row + dr + gridRows) % gridRows;
+              var cc = (col + dc + gridCols) % gridCols;
+              var cell = grid[r * gridCols + cc];
+              for (var k = 0; k < cell.length; k++) {
+                var j = cell[k];
+                if (j === i) continue;
+                var o = boids[j];
+                var dx = wrapD(o.x - b.x, W), dy = wrapD(o.y - b.y, H);
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 1) continue;
+                if (dist < 25) { sepX -= dx / dist; sepY -= dy / dist; sepN++; }
+                if (dist < 50) { aliX += o.vx; aliY += o.vy; aliN++; cohX += dx; cohY += dy; cohN++; }
+              }
+            }
+          }
+          var ax = 0, ay = 0;
+          if (sepN) { ax += (sepX / sepN) * 1.5; ay += (sepY / sepN) * 1.5; }
+          if (aliN) { ax += (aliX / aliN - b.vx) * 0.1; ay += (aliY / aliN - b.vy) * 0.1; }
+          if (cohN) { ax += (cohX / cohN) * 0.01; ay += (cohY / cohN) * 0.01; }
+          ax += (Math.random() - 0.5) * 0.1;
+          ay += (Math.random() - 0.5) * 0.1;
+          var fm = Math.sqrt(ax * ax + ay * ay);
+          if (fm > 0.12) { ax = ax / fm * 0.12; ay = ay / fm * 0.12; }
+          b.vx += ax; b.vy += ay;
+          var spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+          if (spd > 2.5) { b.vx = b.vx / spd * 2.5; b.vy = b.vy / spd * 2.5; }
+          else if (spd < 0.8 && spd > 0.01) { b.vx = b.vx / spd * 0.8; b.vy = b.vy / spd * 0.8; }
+          b.x += b.vx; b.y += b.vy;
+          if (b.x < 0) b.x += W; else if (b.x >= W) b.x -= W;
+          if (b.y < 0) b.y += H; else if (b.y >= H) b.y -= H;
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        step();
+
+        // clip to margins only (outside the 700px content column)
+        var contentW = 700;
+        var marginL = (W - contentW) / 2;
+        var marginR = marginL + contentW;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, marginL, H);
+        ctx.rect(marginR, 0, W - marginR, H);
+        ctx.clip();
+
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 0.5;
+
+        // connection lines only
+        for (var i = 0; i < N; i++) {
+          var b = boids[i];
+          var col = Math.min(Math.max(Math.floor(b.x / CELL), 0), gridCols - 1);
+          var row = Math.min(Math.max(Math.floor(b.y / CELL), 0), gridRows - 1);
+          for (var dr = -1; dr <= 1; dr++) {
+            for (var dc = -1; dc <= 1; dc++) {
+              var r2 = (row + dr + gridRows) % gridRows;
+              var c2 = (col + dc + gridCols) % gridCols;
+              var cell = grid[r2 * gridCols + c2];
+              for (var k = 0; k < cell.length; k++) {
+                var j = cell[k];
+                if (j <= i) continue;
+                var o = boids[j];
+                var dx = wrapD(o.x - b.x, W), dy = wrapD(o.y - b.y, H);
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 40) {
+                  ctx.globalAlpha = (1 - dist / 40) * 0.6;
+                  ctx.beginPath();
+                  ctx.moveTo(b.x, b.y);
+                  ctx.lineTo(b.x + dx, b.y + dy);
+                  ctx.stroke();
+                }
+              }
+            }
+          }
+        }
+        ctx.globalAlpha = 1;
+        ctx.restore();
         requestAnimationFrame(draw);
       }
       draw();

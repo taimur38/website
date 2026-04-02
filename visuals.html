@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visuals — Taimur Shah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <style>
+    :root {
+      --bg:     #fafaf8;
+      --fg:     #1a1a18;
+      --muted:  #888;
+      --border: #e2e2de;
+      --serif:   'Source Serif 4', Georgia, serif;
+      --display: 'Crimson Pro', Georgia, serif;
+      --sans:    'Inter', system-ui, -apple-system, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:     #111110;
+        --fg:     #e4e4e0;
+        --muted:  #666;
+        --border: #252523;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 17px; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--serif);
+      line-height: 1.65;
+      padding: 4rem 1.5rem 3rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-decoration-color: var(--border);
+      text-underline-offset: 3px;
+      transition: text-decoration-color 0.15s;
+    }
+    a:hover { text-decoration-color: var(--fg); }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 1.1rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2.75rem;
+    }
+    .site-name {
+      font-family: var(--display);
+      font-size: 1.15rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+    }
+    nav {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      margin-left: 1.5rem;
+    }
+    nav a:hover { color: var(--fg); }
+
+    .label {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    .cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .cell[data-href] {
+      cursor: pointer;
+    }
+    .cell canvas {
+      width: 200px;
+      height: 200px;
+      display: block;
+    }
+    .cell-label {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.6rem;
+      text-align: center;
+    }
+
+    footer {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding-top: 1.1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 780px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      body { padding: 2rem 1rem 2rem; }
+      header { flex-wrap: wrap; gap: 0.5rem; }
+      .grid { grid-template-columns: 1fr; }
+      .cell canvas { width: 200px; height: 200px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="site-name">Taimur Shah</span>
+    <nav>
+      <a href="/">home</a>
+      <a href="/resume.html">work</a>
+      <a href="#" onclick="this.href='mailto:'+['taimur38','gmail.com'].join('@')">contact</a>
+    </nav>
+  </header>
+
+  <p class="label">Visuals</p>
+
+  <div class="grid">
+    <div class="cell"><canvas id="c1"></canvas><div class="cell-label">Mobius Strip</div></div>
+    <div class="cell"><canvas id="c3"></canvas><div class="cell-label">Trefoil Knot</div></div>
+    <div class="cell"><canvas id="c5"></canvas><div class="cell-label">Geodesic on Sphere</div></div>
+    <div class="cell"><canvas id="c6"></canvas><div class="cell-label">3D Lissajous</div></div>
+    <div class="cell"><canvas id="c7"></canvas><div class="cell-label">Lorenz Attractor</div></div>
+    <div class="cell"><canvas id="c8"></canvas><div class="cell-label">Tesseract</div></div>
+    <div class="cell"><canvas id="c10"></canvas><div class="cell-label">Voronoi Relaxation</div></div>
+    <div class="cell"><canvas id="c11"></canvas><div class="cell-label">Double Pendulum</div></div>
+    <div class="cell" data-href="/webgl.html"><canvas id="c13"></canvas><div class="cell-label">Flocking</div></div>
+  </div>
+
+  <footer>taimur.sh</footer>
+
+  <script>
+    // Shared utilities
+    const S = 200;
+    const dpr = window.devicePixelRatio || 1;
+    let fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
+
+    function readFg() {
+      fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
+    }
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readFg);
+    }
+
+    function initCanvas(id) {
+      const c = document.getElementById(id);
+      c.width = S * dpr;
+      c.height = S * dpr;
+      c.style.width = S + 'px';
+      c.style.height = S + 'px';
+      const ctx = c.getContext('2d');
+      ctx.scale(dpr, dpr);
+      return ctx;
+    }
+
+    function rotateXY(x, y, z, ax, ay) {
+      const ca = Math.cos(ax), sa = Math.sin(ax);
+      const y1 = y * ca - z * sa;
+      const z1 = y * sa + z * ca;
+      const cb = Math.cos(ay), sb = Math.sin(ay);
+      const x2 = x * cb + z1 * sb;
+      return [x2, y1];
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // 1. Mobius Strip
+    // ──────────────────────────────────────────────────────────────
+    (function () {
+      const ctx = initCanvas('c1');
+      const R = 1, W = 0.38;
+      let t = 0;
+
+      function pt(u, v) {
+        const h = u / 2;
+        const cv = Math.cos(h), sv = Math.sin(h);
+        const cu = Math.cos(u), su = Math.sin(u);
+        return [
+          (R + W * v * cv) * cu,
+          (R + W * v * cv) * su,
+          W * v * sv
+        ];
+      }
+
+      function proj(p) {
+        const ax = Math.sin(t * 0.7) * 0.6 + t * 0.12;
+        const ay = t * 0.18;
+        const [px, py] = rotateXY(p[0], p[1], p[2], ax, ay);
+        return [S / 2 + px * 63, S / 2 + py * 63];
+      }
+
+      function strokeLine(v, steps) {
+        ctx.beginPath();
+        for (let i = 0; i <= steps; i++) {
+          const u = (i / steps) * Math.PI * 2;
+          const p = proj(pt(u, v));
+          i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]);
+        }
+        ctx.stroke();
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        ctx.strokeStyle = fg;
+
+        ctx.lineWidth = 1.2;
+        ctx.globalAlpha = 0.75;
+        strokeLine(1, 180);
+        strokeLine(-1, 180);
+
+        ctx.lineWidth = 0.7;
+        ctx.globalAlpha = 0.2;
+        strokeLine(0, 180);
+
+        ctx.globalAlpha = 0.1;
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < 16; i++) {
+          const u = (i / 16) * Math.PI * 2;
+          ctx.beginPath();
+          for (let j = 0; j <= 8; j++) {
+            const v = -1 + (j / 8) * 2;
+            const p = proj(pt(u, v));
+            j === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]);
+          }
+          ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1;
+        t += 0.006;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ──────────────────────────────────────────────────────────────
+    // 3. Trefoil Knot
+    // ──────────────────────────────────────────────────────────────
+    (function () {
+      const ctx = initCanvas('c3');
+      let t = 0;
+
+      function curve(u) {
+        return [
+          Math.sin(u) + 2 * Math.sin(2 * u),
+          Math.cos(u) - 2 * Math.cos(2 * u),
+          -Math.sin(3 * u)
+        ];
+      }
+
+      function proj(p) {
+        const ax = Math.sin(t * 0.5) * 0.4 + t * 0.12;
+        const ay = t * 0.18;
+        const [px, py] = rotateXY(p[0], p[1], p[2], ax, ay);
+        return [S / 2 + px * 24, S / 2 + py * 24];
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        ctx.strokeStyle = fg;
+
+        // shadow
+        ctx.lineWidth = 1.0;
+        ctx.globalAlpha = 0.1;
+        ctx.beginPath();
+        for (let i = 0; i <= 400; i++) {
+          const u = (i / 400) * Math.PI * 2;
+          const c = curve(u);
+          const p = proj([c[0] + 0.15, c[1] + 0.15, c[2]]);
+          i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]);
+        }
+        ctx.stroke();
+
+        // main
+        ctx.lineWidth = 1.2;
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        for (let i = 0; i <= 400; i++) {
+          const u = (i / 400) * Math.PI * 2;
+          const p = proj(curve(u));
+          i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]);
+        }
+        ctx.stroke();
+
+        ctx.globalAlpha = 1;
+        t += 0.006;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ──────────────────────────────────────────────────────────────
+    // 5. Geodesic on Sphere
+    // ──────────────────────────────────────────────────────────────
+    (function () {
+      const ctx = initCanvas('c5');
+      let t = 0;
+      const R = 70;
+      const trailPts = [];
+      const maxTrail = 600;
+
+      function proj(x, y, z) {
+        const ax = 0.45 + Math.sin(t * 0.3) * 0.2;
+        const ay = t * 0.25;
+        const [px, py] = rotateXY(x, y, z, ax, ay);
+        return [S / 2 + px, S / 2 + py, z];
+      }
+
+      // tilted great circle point
+      function gcPt(u, tilt, prec) {
+        const x0 = R * Math.cos(u), y0 = R * Math.sin(u);
+        const ct = Math.cos(tilt), st = Math.sin(tilt);
+        const y1 = y0 * ct, z1 = y0 * st;
+        const cp = Math.cos(prec), sp = Math.sin(prec);
+        return [x0 * cp - z1 * sp, y1, x0 * sp + z1 * cp];
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        ctx.strokeStyle = fg;
+
+        // latitude lines with depth-based opacity
+        for (let i = 1; i < 7; i++) {
+          const lat = -Math.PI / 2 + (i / 7) * Math.PI;
+          const r = R * Math.cos(lat);
+          const y = R * Math.sin(lat);
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          for (let j = 0; j <= 80; j++) {
+            const lon = (j / 80) * Math.PI * 2;
+            const p = proj(r * Math.cos(lon), y, r * Math.sin(lon));
+            ctx.globalAlpha = 0.04 + 0.08 * ((p[2] / R + 1) / 2);
+            j === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]);
+          }
+          ctx.stroke();
+        }
+
+        // longitude lines with depth
+        for (let i = 0; i < 12; i++) {
+          const lon = (i / 12) * Math.PI * 2;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          for (let j = 0; j <= 80; j++) {
+            const lat = -Math.PI / 2 + (j / 80) * Math.PI;
+            const r = R * Math.cos(lat);
+            const y = R * Math.sin(lat);
+            const p = proj(r * Math.cos(lon), y, r * Math.sin(lon));
+            ctx.globalAlpha = 0.04 + 0.08 * ((p[2] / R + 1) / 2);
+            j === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]);
+          }
+          ctx.stroke();
+        }
+
+        // precessing great circle
+        const precession = t * 0.15;
+        const tilt = 0.7 + Math.sin(t * 0.2) * 0.3;
+
+        // trail
+        const pu = (t * 1.2) % (Math.PI * 2);
+        const tp = gcPt(pu, tilt, precession);
+        trailPts.push(tp);
+        if (trailPts.length > maxTrail) trailPts.shift();
+
+        // draw trail as fading segments
+        ctx.lineWidth = 1;
+        for (let i = 1; i < trailPts.length; i++) {
+          const p0 = proj(trailPts[i - 1][0], trailPts[i - 1][1], trailPts[i - 1][2]);
+          const p1 = proj(trailPts[i][0], trailPts[i][1], trailPts[i][2]);
+          ctx.globalAlpha = 0.5 * (i / trailPts.length);
+          ctx.beginPath();
+          ctx.moveTo(p0[0], p0[1]);
+          ctx.lineTo(p1[0], p1[1]);
+          ctx.stroke();
+        }
+
+        // moving point
+        const pp = proj(tp[0], tp[1], tp[2]);
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.arc(pp[0], pp[1], 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+        t += 0.006;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ──────────────────────────────────────────────────────────────
+    // 6. 3D Lissajous
+    // ──────────────────────────────────────────────────────────────
+    (function () {
+      const ctx = initCanvas('c6');
+      let t = 0;
+      let delta = 0;
+      const la = 3, lb = 2, lc = 5;
+
+      function proj(x, y, z) {
+        const ax = t * 0.12;
+        const ay = t * 0.18;
+        const [px, py] = rotateXY(x, y, z, ax, ay);
+        return [S / 2 + px * 65, S / 2 + py * 65];
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 0.8;
+        ctx.globalAlpha = 0.55;
+
+        ctx.beginPath();
+        for (let i = 0; i <= 600; i++) {
+          const u = (i / 600) * Math.PI * 2;
+          const x = Math.sin(la * u + delta);
+          const y = Math.sin(lb * u);
+          const z = Math.sin(lc * u);
+          const p = proj(x, y, z);
+          i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]);
+        }
+        ctx.stroke();
+
+        // second pass, thinner
+        ctx.lineWidth = 0.4;
+        ctx.globalAlpha = 0.15;
+        ctx.beginPath();
+        for (let i = 0; i <= 600; i++) {
+          const u = (i / 600) * Math.PI * 2;
+          const x = Math.sin(la * u + delta + 0.3);
+          const y = Math.sin(lb * u + 0.1);
+          const z = Math.sin(lc * u);
+          const p = proj(x, y, z);
+          i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]);
+        }
+        ctx.stroke();
+
+        ctx.globalAlpha = 1;
+        delta += 0.001;
+        t += 0.006;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ──────────────────────────────────────────────────────────────
+    // 7. Lorenz Attractor
+    // ──────────────────────────────────────────────────────────────
+    (function () {
+      const ctx = initCanvas('c7');
+      let t = 0;
+      const sigma = 10, rho = 28, beta = 8 / 3;
+      const dt = 0.005;
+      const maxPts = 3000;
+      const pts = [];
+      let lx = 0.1, ly = 0, lz = 0;
+
+      // pre-fill
+      for (let i = 0; i < maxPts; i++) {
+        const dx = sigma * (ly - lx);
+        const dy = lx * (rho - lz) - ly;
+        const dz = lx * ly - beta * lz;
+        lx += dx * dt;
+        ly += dy * dt;
+        lz += dz * dt;
+        pts.push([lx, ly, lz]);
+      }
+
+      function proj(p) {
+        const x = p[0], y = p[1], z = p[2] - 25;
+        const ax = t * 0.08;
+        const ay = t * 0.12;
+        const [px, py] = rotateXY(x, y, z, ax, ay);
+        return [S / 2 + px * 3, S / 2 + py * 3];
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 0.7;
+
+        // advance
+        for (let i = 0; i < 8; i++) {
+          const dx = sigma * (ly - lx);
+          const dy = lx * (rho - lz) - ly;
+          const dz = lx * ly - beta * lz;
+          lx += dx * dt;
+          ly += dy * dt;
+          lz += dz * dt;
+          pts.push([lx, ly, lz]);
+          if (pts.length > maxPts) pts.shift();
+        }
+
+        // draw as individual segments with fading alpha
+        const n = pts.length;
+        const step = 2; // draw every other segment for performance
+        for (let i = step; i < n; i += step) {
+          const p0 = proj(pts[i - step]);
+          const p1 = proj(pts[i]);
+          ctx.globalAlpha = 0.03 + 0.6 * (i / n);
+          ctx.beginPath();
+          ctx.moveTo(p0[0], p0[1]);
+          ctx.lineTo(p1[0], p1[1]);
+          ctx.stroke();
+        }
+
+        // bright head dot
+        const head = proj(pts[n - 1]);
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = fg;
+        ctx.beginPath();
+        ctx.arc(head[0], head[1], 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+        t += 0.006;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ──────────────────────────────────────────────────────────────
+    // 8. Tesseract (4D Hypercube)
+    // ──────────────────────────────────────────────────────────────
+    (function () {
+      const ctx = initCanvas('c8');
+      let t = 0;
+
+      // 16 vertices of a 4D hypercube
+      const verts = [];
+      for (let i = 0; i < 16; i++) {
+        verts.push([
+          (i & 1) ? 1 : -1,
+          (i & 2) ? 1 : -1,
+          (i & 4) ? 1 : -1,
+          (i & 8) ? 1 : -1
+        ]);
+      }
+
+      // 32 edges: connect vertices differing in exactly one coordinate
+      const edges = [];
+      for (let i = 0; i < 16; i++) {
+        for (let j = i + 1; j < 16; j++) {
+          let diff = 0;
+          for (let k = 0; k < 4; k++) {
+            if (verts[i][k] !== verts[j][k]) diff++;
+          }
+          if (diff === 1) edges.push([i, j]);
+        }
+      }
+
+      function proj(v) {
+        let [x, y, z, w] = v;
+
+        // rotate in xw plane
+        const a1 = t * 0.15;
+        const c1 = Math.cos(a1), s1 = Math.sin(a1);
+        const nx = x * c1 - w * s1;
+        const nw = x * s1 + w * c1;
+        x = nx; w = nw;
+
+        // rotate in yz plane
+        const a2 = t * 0.12;
+        const c2 = Math.cos(a2), s2 = Math.sin(a2);
+        const ny = y * c2 - z * s2;
+        const nz = y * s2 + z * c2;
+        y = ny; z = nz;
+
+        // 4D -> 3D perspective
+        const d4 = 3;
+        const scale4 = d4 / (d4 - w);
+        const x3 = x * scale4;
+        const y3 = y * scale4;
+        const z3 = z * scale4;
+
+        // 3D -> 2D
+        const ax = Math.sin(t * 0.5) * 0.3;
+        const ay = t * 0.1;
+        const [px, py] = rotateXY(x3, y3, z3, ax, ay);
+        return [S / 2 + px * 40, S / 2 + py * 40];
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        ctx.strokeStyle = fg;
+
+        // edges
+        ctx.lineWidth = 0.7;
+        ctx.globalAlpha = 0.35;
+        for (const [a, b] of edges) {
+          const pa = proj(verts[a]);
+          const pb = proj(verts[b]);
+          ctx.beginPath();
+          ctx.moveTo(pa[0], pa[1]);
+          ctx.lineTo(pb[0], pb[1]);
+          ctx.stroke();
+        }
+
+        // vertices
+        ctx.fillStyle = fg;
+        ctx.globalAlpha = 0.4;
+        for (const v of verts) {
+          const p = proj(v);
+          ctx.beginPath();
+          ctx.arc(p[0], p[1], 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.globalAlpha = 1;
+        t += 0.006;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ──────────────────────────────────────────────────────────────
+    // 10. Voronoi Relaxation
+    // ──────────────────────────────────────────────────────────────
+    (function () {
+      const ctx = initCanvas('c10');
+      const numPts = 12;
+      const margin = 10;
+      const pts = [];
+
+      for (let i = 0; i < numPts; i++) {
+        pts.push({
+          x: margin + Math.random() * (S - 2 * margin),
+          y: margin + Math.random() * (S - 2 * margin),
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4
+        });
+      }
+
+      const res = 100;
+      const grid = new Int8Array(res * res);
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+
+        // move points
+        for (const p of pts) {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < margin || p.x > S - margin) p.vx *= -1;
+          if (p.y < margin || p.y > S - margin) p.vy *= -1;
+          p.x = Math.max(margin, Math.min(S - margin, p.x));
+          p.y = Math.max(margin, Math.min(S - margin, p.y));
+        }
+
+        // compute nearest point for each grid cell
+        const cellW = S / res;
+        for (let gy = 0; gy < res; gy++) {
+          for (let gx = 0; gx < res; gx++) {
+            const cx = (gx + 0.5) * cellW;
+            const cy = (gy + 0.5) * cellW;
+            let minD = Infinity, minI = 0;
+            for (let i = 0; i < numPts; i++) {
+              const dx = cx - pts[i].x;
+              const dy = cy - pts[i].y;
+              const d = dx * dx + dy * dy;
+              if (d < minD) { minD = d; minI = i; }
+            }
+            grid[gy * res + gx] = minI;
+          }
+        }
+
+        // draw edges where adjacent cells differ
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 0.7;
+        ctx.globalAlpha = 0.25;
+        ctx.beginPath();
+        for (let gy = 0; gy < res - 1; gy++) {
+          for (let gx = 0; gx < res - 1; gx++) {
+            const idx = gy * res + gx;
+            const cur = grid[idx];
+            // check right neighbor
+            if (grid[idx + 1] !== cur) {
+              const x = (gx + 1) * cellW;
+              const y = gy * cellW;
+              ctx.moveTo(x, y);
+              ctx.lineTo(x, y + cellW);
+            }
+            // check bottom neighbor
+            if (grid[idx + res] !== cur) {
+              const x = gx * cellW;
+              const y = (gy + 1) * cellW;
+              ctx.moveTo(x, y);
+              ctx.lineTo(x + cellW, y);
+            }
+          }
+        }
+        ctx.stroke();
+
+        // draw seed points
+        ctx.fillStyle = fg;
+        ctx.globalAlpha = 0.5;
+        for (const p of pts) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ──────────────────────────────────────────────────────────────
+    // 11. Double Pendulum
+    // ──────────────────────────────────────────────────────────────
+    (function () {
+      const ctx = initCanvas('c11');
+      const g = 9.81;
+      const m1 = 1, m2 = 1;
+      const L1 = 55, L2 = 55;
+      let th1 = Math.PI / 2, th2 = Math.PI / 2;
+      let w1 = 0, w2 = 0;
+      const trail = [];
+      const maxTrail = 500;
+
+      function derivs(th1, th2, w1, w2) {
+        const dt1 = th1 - th2;
+        const den1 = (m1 + m2) * L1 - m2 * L1 * Math.cos(dt1) * Math.cos(dt1);
+        const den2 = (L2 / L1) * den1;
+        const dw1 = (-m2 * L1 * w1 * w1 * Math.sin(dt1) * Math.cos(dt1)
+                     + m2 * g * Math.sin(th2) * Math.cos(dt1)
+                     - m2 * L2 * w2 * w2 * Math.sin(dt1)
+                     - (m1 + m2) * g * Math.sin(th1)) / den1;
+        const dw2 = (m2 * L2 * w2 * w2 * Math.sin(dt1) * Math.cos(dt1)
+                     + (m1 + m2) * g * Math.sin(th1) * Math.cos(dt1)
+                     + (m1 + m2) * L1 * w1 * w1 * Math.sin(dt1)
+                     - (m1 + m2) * g * Math.sin(th2)) / den2;
+        return [w1, w2, dw1, dw2];
+      }
+
+      function step(h) {
+        const k1 = derivs(th1, th2, w1, w2);
+        const k2 = derivs(th1 + h/2*k1[0], th2 + h/2*k1[1], w1 + h/2*k1[2], w2 + h/2*k1[3]);
+        const k3 = derivs(th1 + h/2*k2[0], th2 + h/2*k2[1], w1 + h/2*k2[2], w2 + h/2*k2[3]);
+        const k4 = derivs(th1 + h*k3[0], th2 + h*k3[1], w1 + h*k3[2], w2 + h*k3[3]);
+        th1 += h/6*(k1[0] + 2*k2[0] + 2*k3[0] + k4[0]);
+        th2 += h/6*(k1[1] + 2*k2[1] + 2*k3[1] + k4[1]);
+        w1  += h/6*(k1[2] + 2*k2[2] + 2*k3[2] + k4[2]);
+        w2  += h/6*(k1[3] + 2*k2[3] + 2*k3[3] + k4[3]);
+      }
+
+      const pivotX = S / 2, pivotY = S * 0.3;
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+
+        // physics steps
+        for (let i = 0; i < 4; i++) step(0.03);
+
+        const x1 = pivotX + L1 * Math.sin(th1);
+        const y1 = pivotY + L1 * Math.cos(th1);
+        const x2 = x1 + L2 * Math.sin(th2);
+        const y2 = y1 + L2 * Math.cos(th2);
+
+        trail.push([x2, y2]);
+        if (trail.length > maxTrail) trail.shift();
+
+        // trail
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 0.7;
+        for (let i = 1; i < trail.length; i++) {
+          ctx.globalAlpha = 0.02 + 0.4 * (i / trail.length);
+          ctx.beginPath();
+          ctx.moveTo(trail[i - 1][0], trail[i - 1][1]);
+          ctx.lineTo(trail[i][0], trail[i][1]);
+          ctx.stroke();
+        }
+
+        // rods
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 1.0;
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(pivotX, pivotY);
+        ctx.lineTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        // pivot
+        ctx.fillStyle = fg;
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        ctx.arc(pivotX, pivotY, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // bobs
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(x1, y1, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x2, y2, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ──────────────────────────────────────────────────────────────
+    // 13. Flocking (Canvas2D preview)
+    // ──────────────────────────────────────────────────────────────
+    (function () {
+      const ctx = initCanvas('c13');
+      const N = 60, CELL = 30;
+      const boids = [];
+      for (let i = 0; i < N; i++) {
+        boids.push({
+          x: Math.random() * S, y: Math.random() * S,
+          vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2
+        });
+      }
+
+      let gridCols, gridRows, grid;
+      function buildGrid() {
+        gridCols = Math.ceil(S / CELL) || 1;
+        gridRows = Math.ceil(S / CELL) || 1;
+        const total = gridCols * gridRows;
+        if (!grid || grid.length !== total) {
+          grid = []; for (let i = 0; i < total; i++) grid[i] = [];
+        } else {
+          for (let i = 0; i < total; i++) grid[i].length = 0;
+        }
+        for (let i = 0; i < N; i++) {
+          const b = boids[i];
+          const col = Math.min(Math.max(Math.floor(b.x / CELL), 0), gridCols - 1);
+          const row = Math.min(Math.max(Math.floor(b.y / CELL), 0), gridRows - 1);
+          grid[row * gridCols + col].push(i);
+        }
+      }
+
+      function wrapD(d) {
+        if (d > S * 0.5) return d - S;
+        if (d < -S * 0.5) return d + S;
+        return d;
+      }
+
+      function step() {
+        buildGrid();
+        for (let i = 0; i < N; i++) {
+          const b = boids[i];
+          let sepX = 0, sepY = 0, sepN = 0;
+          let aliX = 0, aliY = 0, aliN = 0;
+          let cohX = 0, cohY = 0, cohN = 0;
+          const col = Math.min(Math.max(Math.floor(b.x / CELL), 0), gridCols - 1);
+          const row = Math.min(Math.max(Math.floor(b.y / CELL), 0), gridRows - 1);
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              const r = (row + dr + gridRows) % gridRows;
+              const cc = (col + dc + gridCols) % gridCols;
+              const cell = grid[r * gridCols + cc];
+              for (let k = 0; k < cell.length; k++) {
+                const j = cell[k];
+                if (j === i) continue;
+                const o = boids[j];
+                const dx = wrapD(o.x - b.x), dy = wrapD(o.y - b.y);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 1) continue;
+                if (dist < 12) { sepX -= dx / dist; sepY -= dy / dist; sepN++; }
+                if (dist < 28) { aliX += o.vx; aliY += o.vy; aliN++; cohX += dx; cohY += dy; cohN++; }
+              }
+            }
+          }
+          let ax = 0, ay = 0;
+          if (sepN) { ax += (sepX / sepN) * 1.5; ay += (sepY / sepN) * 1.5; }
+          if (aliN) { ax += (aliX / aliN - b.vx) * 0.1; ay += (aliY / aliN - b.vy) * 0.1; }
+          if (cohN) { ax += (cohX / cohN) * 0.01; ay += (cohY / cohN) * 0.01; }
+          ax += (Math.random() - 0.5) * 0.1; ay += (Math.random() - 0.5) * 0.1;
+          const fm = Math.sqrt(ax * ax + ay * ay);
+          if (fm > 0.12) { ax = ax / fm * 0.12; ay = ay / fm * 0.12; }
+          b.vx += ax; b.vy += ay;
+          const spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+          if (spd > 2.5) { b.vx = b.vx / spd * 2.5; b.vy = b.vy / spd * 2.5; }
+          else if (spd < 0.8 && spd > 0.01) { b.vx = b.vx / spd * 0.8; b.vy = b.vy / spd * 0.8; }
+          b.x += b.vx; b.y += b.vy;
+          if (b.x < 0) b.x += S; else if (b.x >= S) b.x -= S;
+          if (b.y < 0) b.y += S; else if (b.y >= S) b.y -= S;
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        step();
+        ctx.strokeStyle = fg;
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < N; i++) {
+          const b = boids[i];
+          const col = Math.min(Math.max(Math.floor(b.x / CELL), 0), gridCols - 1);
+          const row = Math.min(Math.max(Math.floor(b.y / CELL), 0), gridRows - 1);
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              const r2 = (row + dr + gridRows) % gridRows;
+              const c2 = (col + dc + gridCols) % gridCols;
+              const cell = grid[r2 * gridCols + c2];
+              for (let k = 0; k < cell.length; k++) {
+                const j = cell[k];
+                if (j <= i) continue;
+                const o = boids[j];
+                const dx = wrapD(o.x - b.x), dy = wrapD(o.y - b.y);
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 25) {
+                  ctx.globalAlpha = (1 - dist / 25) * 0.3;
+                  ctx.beginPath();
+                  ctx.moveTo(b.x, b.y);
+                  ctx.lineTo(b.x + dx, b.y + dy);
+                  ctx.stroke();
+                }
+              }
+            }
+          }
+        }
+        // boid dots
+        ctx.fillStyle = fg;
+        ctx.globalAlpha = 0.4;
+        for (let i = 0; i < N; i++) {
+          ctx.beginPath();
+          ctx.arc(boids[i].x, boids[i].y, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ──────────────────────────────────────────────────────────────
+    // Click-through for cells with data-href
+    // ──────────────────────────────────────────────────────────────
+    document.querySelectorAll('.cell[data-href]').forEach(cell => {
+      cell.addEventListener('click', () => {
+        window.location.href = cell.dataset.href;
+      });
+    });
+  </script>
+</body>
+</html>
