@@ -91,8 +91,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-    }
-    .cell[data-href] {
       cursor: pointer;
     }
     .cell canvas {
@@ -116,6 +114,95 @@
       border-top: 1px solid var(--border);
     }
 
+    /* Expanded overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .overlay-frame {
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      position: relative;
+      transform: scale(0.6);
+      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .overlay.open .overlay-frame {
+      transform: scale(1);
+    }
+    .overlay-frame canvas {
+      display: block;
+    }
+    .overlay-close {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.75rem;
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      color: var(--muted);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      line-height: 1;
+    }
+    .overlay-close:hover { color: var(--fg); }
+    .overlay-desc {
+      max-width: 460px;
+      margin-top: 1.5rem;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.4s ease 0.15s, transform 0.4s ease 0.15s;
+    }
+    .overlay.open .overlay-desc {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .overlay-title {
+      font-family: var(--display);
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .overlay-text {
+      font-size: 0.92rem;
+      line-height: 1.7;
+      color: var(--fg);
+      opacity: 0.75;
+    }
+
+    .overlay-fullscreen {
+      display: none;
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 1rem;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .overlay-fullscreen:hover { color: var(--fg); }
+    .overlay-fullscreen.visible { display: inline-block; }
+
+    /* Hide grid cells when overlay is open */
+    body.has-overlay .grid .cell {
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .grid .cell {
+      transition: opacity 0.25s ease;
+    }
+
     @media (max-width: 780px) {
       .grid { grid-template-columns: repeat(2, 1fr); }
     }
@@ -124,6 +211,8 @@
       header { flex-wrap: wrap; gap: 0.5rem; }
       .grid { grid-template-columns: 1fr; }
       .cell canvas { width: 200px; height: 200px; }
+      .overlay-frame canvas { width: 280px; height: 280px; }
+      .overlay-desc { max-width: 300px; padding: 0 1rem; }
     }
   </style>
 </head>
@@ -154,9 +243,22 @@
 
   <footer>taimur.sh</footer>
 
+  <div class="overlay" id="overlay">
+    <div class="overlay-frame" id="overlay-frame">
+      <button class="overlay-close" id="overlay-close">&times;</button>
+    </div>
+    <div class="overlay-desc">
+      <div class="overlay-title" id="overlay-title"></div>
+      <div class="overlay-text" id="overlay-text"></div>
+      <a class="overlay-fullscreen" id="overlay-fullscreen" href="/webgl.html">view fullscreen &amp; interact &rarr;</a>
+    </div>
+  </div>
+
   <script>
     // Shared utilities
     const S = 200;
+    const S_SMALL = 200;
+    const S_LARGE = 400;
     const dpr = window.devicePixelRatio || 1;
     let fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
 
@@ -954,12 +1056,134 @@
     })();
 
     // ──────────────────────────────────────────────────────────────
-    // Click-through for cells with data-href
+    // Descriptions
     // ──────────────────────────────────────────────────────────────
-    document.querySelectorAll('.cell[data-href]').forEach(cell => {
-      cell.addEventListener('click', () => {
-        window.location.href = cell.dataset.href;
+    const descriptions = {
+      c1: {
+        title: 'Mobius Strip',
+        text: 'A surface with only one side and one edge. Take a strip of paper, give it a half-twist, and glue the ends together — an ant walking along it would traverse both "sides" without ever crossing an edge. It\'s the simplest example of a non-orientable surface, and one of those objects where the math is more intuitive than the definition.'
+      },
+      c3: {
+        title: 'Trefoil Knot',
+        text: 'The simplest non-trivial knot — you can\'t untangle it into a circle without cutting. Knot theory started as Lord Kelvin\'s misguided attempt to classify atoms as knotted vortices in the ether. The physics was wrong, but the mathematics turned out to be extraordinarily deep, connecting to everything from DNA topology to quantum field theory.'
+      },
+      c5: {
+        title: 'Geodesic on Sphere',
+        text: 'A geodesic is the shortest path between two points on a curved surface — the equivalent of a straight line, but on a sphere. Every great circle is a geodesic. This is why flight paths look curved on flat maps but are actually the most efficient routes. The trail traces a precessing great circle, the kind of path a satellite might follow as the Earth rotates beneath it.'
+      },
+      c6: {
+        title: '3D Lissajous',
+        text: 'Lissajous figures emerge when you combine oscillations along different axes at different frequencies. In 2D they produce the familiar figures seen on oscilloscopes. Add a third dimension and they become intricate space curves — a single continuous line that fills a volume without ever intersecting itself. The ratio of the frequencies determines the shape; rational ratios produce closed curves, irrational ones never repeat.'
+      },
+      c7: {
+        title: 'Lorenz Attractor',
+        text: 'In 1963, Edward Lorenz was running a simplified weather simulation and decided to restart a run from the middle, typing in numbers from a printout. The printout rounded to three decimal places; the computer used six. The result was a completely different forecast — and the birth of chaos theory. The system\'s trajectory traces this butterfly shape, never repeating, never intersecting, sensitive to the smallest perturbation. It\'s the origin of the phrase "butterfly effect."'
+      },
+      c8: {
+        title: 'Tesseract',
+        text: 'A tesseract is to a cube what a cube is to a square — the four-dimensional analogue. It has 16 vertices, 32 edges, 24 square faces, and 8 cubic cells. What you\'re seeing is a projection from 4D to 2D, the same way a shadow of a 3D cube on a wall is a 2D shape. The rotation happens in the xw-plane — a direction we can compute but cannot point to.'
+      },
+      c10: {
+        title: 'Voronoi Relaxation',
+        text: 'Given a set of seed points, a Voronoi diagram partitions space so that every location belongs to the nearest seed. The pattern appears everywhere in nature — mud cracks, giraffe markings, cell membranes, territorial boundaries of fish. Here the seeds drift slowly, and the diagram continuously reconfigures. It\'s a reminder that even simple proximity rules generate rich, organic structure.'
+      },
+      c11: {
+        title: 'Double Pendulum',
+        text: 'A pendulum hanging from a pendulum. The equations of motion are straightforward to write down, but the system is chaotic — two double pendulums started with nearly identical conditions will quickly diverge into completely different trajectories. It\'s a physical system simple enough to build from two sticks and some bolts, yet complex enough to be fundamentally unpredictable. The trail it draws is never the same twice.'
+      },
+      c13: {
+        title: 'Flocking',
+        text: 'Craig Reynolds\' 1986 boids algorithm showed that flocking behavior doesn\'t need a leader or a plan — just three local rules: don\'t crowd nearby boids, steer toward their average heading, and move toward their average position. From these, coherent flocks, schools, and swarms emerge. It\'s one of the cleanest demonstrations that complex collective behavior can arise from simple individual rules.'
+      }
+    };
+
+    // ──────────────────────────────────────────────────────────────
+    // Expand / collapse
+    // ──────────────────────────────────────────────────────────────
+    const overlay = document.getElementById('overlay');
+    const overlayFrame = document.getElementById('overlay-frame');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayText = document.getElementById('overlay-text');
+    const overlayClose = document.getElementById('overlay-close');
+    const overlayFullscreen = document.getElementById('overlay-fullscreen');
+
+    let activeCell = null;
+    let activeCanvas = null;
+
+    function openOverlay(cell) {
+      const canvas = cell.querySelector('canvas');
+      const canvasId = canvas.id;
+      const desc = descriptions[canvasId];
+      if (!desc) return;
+
+      activeCell = cell;
+      activeCanvas = canvas;
+
+      // Show fullscreen link only for flocking
+      if (cell.dataset.href) {
+        overlayFullscreen.classList.add('visible');
+      } else {
+        overlayFullscreen.classList.remove('visible');
+      }
+
+      // Resize canvas buffer to large size, scale transform so draw functions still use S=200 coords
+      const scale = S_LARGE / S_SMALL;
+      canvas.width = S_LARGE * dpr;
+      canvas.height = S_LARGE * dpr;
+      canvas.style.width = S_LARGE + 'px';
+      canvas.style.height = S_LARGE + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+
+      // Move canvas into the overlay frame
+      overlayFrame.appendChild(canvas);
+
+      overlayTitle.textContent = desc.title;
+      overlayText.textContent = desc.text;
+
+      document.body.classList.add('has-overlay');
+
+      requestAnimationFrame(() => {
+        overlay.classList.add('open');
       });
+    }
+
+    function closeOverlay() {
+      overlay.classList.remove('open');
+      overlayFullscreen.classList.remove('visible');
+
+      // After transition, move canvas back and restore size
+      setTimeout(() => {
+        if (activeCanvas && activeCell) {
+          activeCanvas.width = S_SMALL * dpr;
+          activeCanvas.height = S_SMALL * dpr;
+          activeCanvas.style.width = S_SMALL + 'px';
+          activeCanvas.style.height = S_SMALL + 'px';
+          const ctx = activeCanvas.getContext('2d');
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          activeCell.insertBefore(activeCanvas, activeCell.querySelector('.cell-label'));
+        }
+        document.body.classList.remove('has-overlay');
+        activeCell = null;
+        activeCanvas = null;
+      }, 400);
+    }
+
+    document.querySelectorAll('.cell').forEach(cell => {
+      cell.addEventListener('click', () => openOverlay(cell));
+    });
+
+    overlayClose.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeOverlay();
+    });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeOverlay();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeOverlay();
     });
   </script>
 </body>
