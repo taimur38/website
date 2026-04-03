@@ -130,12 +130,27 @@
     .work-at { color: var(--muted); }
     .work-org { font-weight: 600; transition: color 0.15s; }
     .work-chevron {
-      display: inline-block;
-      font-size: 0.55rem;
-      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
-      transition: transform 0.25s ease;
+      width: 1.4rem;
+      height: 1.4rem;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      transition: transform 0.25s ease, border-color 0.15s;
     }
+    .work-chevron::after {
+      content: '';
+      display: block;
+      width: 0;
+      height: 0;
+      border-left: 5.5px solid var(--muted);
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      margin-left: 1.5px;
+    }
+    .work-entry summary:hover .work-chevron { border-color: var(--muted); }
     .work-entry[open] .work-chevron {
       transform: rotate(90deg);
     }
@@ -248,7 +263,7 @@
 
     <details class="work-entry">
       <summary>
-        <span class="work-chevron">&#9654;</span>
+        <span class="work-chevron"></span>
         <span class="work-summary-text"><span class="work-role">Research Fellow</span> <span class="work-at">at</span> <span class="work-org">The Growth Lab at Harvard Kennedy School</span></span>
         <span class="work-year">2023–</span>
       </summary>
@@ -263,7 +278,7 @@
 
     <details class="work-entry">
       <summary>
-        <span class="work-chevron">&#9654;</span>
+        <span class="work-chevron"></span>
         <span class="work-summary-text"><span class="work-role">Chief Technology Officer</span> <span class="work-at">at</span> <span class="work-org">Beaj</span></span>
         <span class="work-year">2023–</span>
       </summary>
@@ -275,7 +290,7 @@
 
     <details class="work-entry">
       <summary>
-        <span class="work-chevron">&#9654;</span>
+        <span class="work-chevron"></span>
         <span class="work-summary-text"><span class="work-role">Short-Term Consultant</span> <span class="work-at">at</span> <span class="work-org">World Bank</span></span>
         <span class="work-year">2025</span>
       </summary>
@@ -287,7 +302,7 @@
 
     <details class="work-entry">
       <summary>
-        <span class="work-chevron">&#9654;</span>
+        <span class="work-chevron"></span>
         <span class="work-summary-text"><span class="work-role">Economic Advisor</span> <span class="work-at">at</span> <span class="work-org">ASPIRE</span></span>
         <span class="work-year">2022</span>
       </summary>
@@ -299,7 +314,7 @@
 
     <details class="work-entry">
       <summary>
-        <span class="work-chevron">&#9654;</span>
+        <span class="work-chevron"></span>
         <span class="work-summary-text"><span class="work-role">Associate Director &amp; Founder</span> <span class="work-at">at</span> <span class="work-org">CERP Labs</span></span>
         <span class="work-year">2018–21</span>
       </summary>
@@ -315,7 +330,7 @@
 
     <details class="work-entry">
       <summary>
-        <span class="work-chevron">&#9654;</span>
+        <span class="work-chevron"></span>
         <span class="work-summary-text"><span class="work-role">Software Architect</span> <span class="work-at">at</span> <span class="work-org">IBM Watson</span></span>
         <span class="work-year">2014–18</span>
       </summary>
@@ -331,7 +346,7 @@
 
     <details class="work-entry">
       <summary>
-        <span class="work-chevron">&#9654;</span>
+        <span class="work-chevron"></span>
         <span class="work-summary-text"><span class="work-role">VP of Engineering</span> <span class="work-at">at</span> <span class="work-org">Parrable</span></span>
         <span class="work-year">2013–14</span>
       </summary>
@@ -343,7 +358,7 @@
 
     <details class="work-entry">
       <summary>
-        <span class="work-chevron">&#9654;</span>
+        <span class="work-chevron"></span>
         <span class="work-summary-text"><span class="work-role">Co-Founder</span> <span class="work-at">at</span> <span class="work-org">Clossit</span> <span class="work-at">(acq.)</span></span>
         <span class="work-year">2011–13</span>
       </summary>
@@ -410,6 +425,14 @@
         }
       });
     });
+
+    // Auto-expand first entry after a short delay so the user sees the animation
+    setTimeout(function () {
+      var first = document.querySelector('.work-entry');
+      if (first && !first.open) {
+        first.querySelector('summary').click();
+      }
+    }, 600);
   </script>
 </body>
 </html>
