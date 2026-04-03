@@ -1,0 +1,105 @@
+/* ── style.css — shared styles for taimur.sh ──────────────── */
+
+/* ── Variables ──────────────────────────────────────────── */
+:root {
+  --bg:     #fafaf8;
+  --fg:     #1a1a18;
+  --muted:  #888;
+  --border: #e2e2de;
+  --accent: #4a6fa5;
+  --serif:   'Source Serif 4', Georgia, serif;
+  --display: 'Crimson Pro', Georgia, serif;
+  --sans:    'Inter', system-ui, -apple-system, sans-serif;
+  --mono:    'SF Mono', 'Fira Mono', 'Cascadia Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:     #111110;
+    --fg:     #e4e4e0;
+    --muted:  #666;
+    --border: #252523;
+    --accent: #7ea8d4;
+  }
+}
+
+/* ── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Base ───────────────────────────────────────────────── */
+html { font-size: 17px; background: var(--bg); }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--serif);
+  line-height: 1.65;
+  padding: 4rem 1.5rem 3rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s;
+}
+a:hover { text-decoration-color: var(--fg); }
+
+/* ── Header ─────────────────────────────────────────────── */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2.75rem;
+}
+.site-name {
+  font-family: var(--display);
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+nav {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+}
+nav a {
+  color: var(--muted);
+  text-decoration: none;
+  margin-left: 1.5rem;
+}
+nav a:hover { color: var(--fg); }
+
+/* ── Section label ──────────────────────────────────────── */
+.label {
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+footer {
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border);
+}
+footer a {
+  color: var(--muted);
+  text-decoration: none;
+}
+footer a:hover { color: var(--fg); }
+
+/* ── Responsive base ────────────────────────────────────── */
+@media (max-width: 600px) {
+  body { padding: 2.75rem 1.25rem 2.5rem; }
+}
+@media (max-width: 480px) {
+  body { padding: 2rem 1rem 2rem; font-size: 16px; }
+  header { flex-wrap: wrap; gap: 0.5rem; }
+}

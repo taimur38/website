@@ -8,75 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/style.css">
   <style>
-    /* ── Variables ──────────────────────────────────────────── */
-    :root {
-      --bg:     #fafaf8;
-      --fg:     #1a1a18;
-      --muted:  #888;
-      --border: #e2e2de;
-      --accent: #4a6fa5;
-      --serif:   'Source Serif 4', Georgia, serif;
-      --display: 'Crimson Pro', Georgia, serif;
-      --sans:    'Inter', system-ui, -apple-system, sans-serif;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg:     #111110;
-        --fg:     #e4e4e0;
-        --muted:  #666;
-        --border: #252523;
-        --accent: #7ea8d4;
-      }
-    }
-
-    /* ── Reset ──────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    /* ── Base ───────────────────────────────────────────────── */
-    html { font-size: 17px; background: var(--bg); }
-    body {
-      color: var(--fg);
-      font-family: var(--serif);
-      line-height: 1.65;
-      padding: 4rem 1.5rem 3rem;
-      max-width: 960px;
-      margin: 0 auto;
-    }
-    a {
-      color: inherit;
-      text-decoration: underline;
-      text-decoration-color: var(--border);
-      text-underline-offset: 3px;
-      transition: text-decoration-color 0.15s;
-    }
-    a:hover { text-decoration-color: var(--fg); }
-
-    /* ── Header ─────────────────────────────────────────────── */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding-bottom: 1.1rem;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 2.75rem;
-    }
-    .site-name {
-      font-family: var(--display);
-      font-size: 1.15rem;
-      font-weight: 400;
-      letter-spacing: 0.01em;
-    }
-    nav {
-      font-family: var(--sans);
-      font-size: 0.85rem;
-    }
-    nav a {
-      color: var(--muted);
-      text-decoration: none;
-      margin-left: 1.5rem;
-    }
-    nav a:hover { color: var(--fg); }
+    body { max-width: 960px; }
 
     /* ── Post ───────────────────────────────────────────────── */
     .post-meta {
@@ -140,25 +74,10 @@
       .visual-cell canvas { width: 180px; height: 180px; }
     }
 
-    /* ── Footer ─────────────────────────────────────────────── */
-    footer {
-      font-family: var(--sans);
-      font-size: 0.78rem;
-      color: var(--muted);
-      padding-top: 1.1rem;
-      border-top: 1px solid var(--border);
-      margin-top: 3rem;
-    }
-    footer a {
-      color: var(--muted);
-      text-decoration: none;
-    }
-    footer a:hover { color: var(--fg); }
+    footer { margin-top: 3rem; }
 
-    /* ── Responsive ─────────────────────────────────────────── */
+    /* ── Responsive (page-specific) ─────────────────────────── */
     @media (max-width: 480px) {
-      body { padding: 2rem 1rem 2rem; font-size: 16px; }
-      header { flex-wrap: wrap; gap: 0.5rem; }
       .post-title { font-size: 1.5rem; }
     }
   </style>
@@ -205,36 +124,14 @@
     <a href="/">← taimur.sh</a>
   </footer>
 
+  <script src="/shared.js"></script>
   <script>
   (function () {
     var S = 200;
-    var dpr = window.devicePixelRatio || 1;
-    var fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
-    var muted = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
-    var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    var col = site.colors;
 
-    function readColors() {
-      fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
-      muted = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
-      accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-    }
-    if (window.matchMedia) {
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
-    }
-
-    function initCanvas(id) {
-      var c = document.getElementById(id);
-      c.width = S * dpr;
-      c.height = S * dpr;
-      c.style.width = S + 'px';
-      c.style.height = S + 'px';
-      var ctx = c.getContext('2d');
-      ctx.scale(dpr, dpr);
-      return ctx;
-    }
-
-    var ctx1 = initCanvas('wave-only');
-    var ctx2 = initCanvas('particles-only');
+    var ctx1 = site.initCanvas('wave-only', S).ctx;
+    var ctx2 = site.initCanvas('particles-only', S).ctx;
 
 
     // ── Wave parameters ─────────────────────────────────────
@@ -259,7 +156,7 @@
     // View 1: Just the wave lines
     function drawWaveOnly(ctx, time) {
       ctx.clearRect(0, 0, S, S);
-      ctx.strokeStyle = fg;
+      ctx.strokeStyle = col.fg;
       ctx.lineWidth = 1;
       ctx.globalAlpha = 0.5;
       for (var r = 0; r < ROWS; r++) {
@@ -281,7 +178,7 @@
       for (var r = 0; r < ROWS; r++) {
         for (var c = 0; c < COLS; c++) {
           // draw fading trail by sampling past positions
-          ctx.strokeStyle = fg;
+          ctx.strokeStyle = col.fg;
           ctx.lineWidth = 1.2;
           for (var i = 1; i < TRAIL_STEPS; i++) {
             var tPrev = time - (TRAIL_STEPS - i + 1) * TRAIL_STEP_SIZE;
@@ -297,7 +194,7 @@
           // dot
           var p = particlePos(c, r, time);
           ctx.beginPath();
-          ctx.fillStyle = fg;
+          ctx.fillStyle = col.fg;
           ctx.globalAlpha = 0.8;
           ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
           ctx.fill();
@@ -316,7 +213,7 @@
     frame();
 
     // ── Penrose stairs (strange loop) ───────────────────────
-    var ctxP = initCanvas('penrose');
+    var ctxP = site.initCanvas('penrose', S).ctx;
     var penroseT = 0;
 
     // Isometric Penrose staircase — 4 flights of stairs, each ascending,
@@ -362,7 +259,7 @@
 
     // Draw the staircase structure (risers + treads)
     function drawStairs(ctx) {
-      ctx.strokeStyle = fg;
+      ctx.strokeStyle = col.fg;
       ctx.lineWidth = 0.8;
       ctx.globalAlpha = 0.25;
 
@@ -401,7 +298,7 @@
       var pos = (time * 0.5) % totalSteps;
 
       // Trail
-      ctx.strokeStyle = fg;
+      ctx.strokeStyle = col.fg;
       ctx.lineWidth = 1.2;
       var trailLen = 12;
       for (var i = 1; i < trailLen; i++) {
@@ -416,7 +313,7 @@
 
       // Dot
       var p = getPos(pos);
-      ctx.fillStyle = fg;
+      ctx.fillStyle = col.fg;
       ctx.globalAlpha = 0.85;
       ctx.beginPath();
       ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);

@@ -8,75 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/style.css">
   <style>
-    /* ── Variables ──────────────────────────────────────────── */
-    :root {
-      --bg:     #fafaf8;
-      --fg:     #1a1a18;
-      --muted:  #888;
-      --border: #e2e2de;
-      --serif:   'Source Serif 4', Georgia, serif;
-      --display: 'Crimson Pro', Georgia, serif;
-      --sans:    'Inter', system-ui, -apple-system, sans-serif;
-      --mono:    'SF Mono', 'Fira Mono', 'Cascadia Mono', monospace;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg:     #111110;
-        --fg:     #e4e4e0;
-        --muted:  #666;
-        --border: #252523;
-      }
-    }
-
-    /* ── Reset ──────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    /* ── Base ───────────────────────────────────────────────── */
-    html { font-size: 17px; background: var(--bg); }
-    body {
-      color: var(--fg);
-      font-family: var(--serif);
-      line-height: 1.65;
-      padding: 4rem 1.5rem 3rem;
-      max-width: 700px;
-      margin: 0 auto;
-      position: relative;
-    }
-    a {
-      color: inherit;
-      text-decoration: underline;
-      text-decoration-color: var(--border);
-      text-underline-offset: 3px;
-      transition: text-decoration-color 0.15s;
-    }
-    a:hover { text-decoration-color: var(--fg); }
-
-    /* ── Header ─────────────────────────────────────────────── */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding-bottom: 1.1rem;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 2.75rem;
-    }
-    .site-name {
-      font-family: var(--display);
-      font-size: 1.15rem;
-      font-weight: 400;
-      letter-spacing: 0.01em;
-    }
-    nav {
-      font-family: var(--sans);
-      font-size: 0.85rem;
-    }
-    nav a {
-      color: var(--muted);
-      text-decoration: none;
-      margin-left: 1.5rem;
-    }
-    nav a:hover { color: var(--fg); }
+    body { position: relative; }
 
     /* ── Intro ──────────────────────────────────────────────── */
     .intro {
@@ -119,16 +53,6 @@
       text-decoration: none;
     }
     .ext-links a:hover { color: var(--fg); }
-
-    /* ── Section label ──────────────────────────────────────── */
-    .label {
-      font-family: var(--sans);
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--muted);
-      margin-bottom: 0;
-    }
 
     /* ── Projects ───────────────────────────────────────────── */
     section { margin-bottom: 3rem; }
@@ -176,9 +100,7 @@
     .project-links a:hover { color: var(--fg); border-bottom-color: var(--fg); }
 
     /* ── Bio ────────────────────────────────────────────────── */
-    .bio {
-      max-width: 62ch;
-    }
+    .bio { max-width: 62ch; }
     .bio p {
       font-size: 1rem;
       line-height: 1.75;
@@ -186,22 +108,8 @@
     }
     .bio p:last-child { margin-bottom: 0; }
 
-    /* ── Footer ─────────────────────────────────────────────── */
-    footer {
-      font-family: var(--sans);
-      font-size: 0.78rem;
-      color: var(--muted);
-      padding-top: 1.1rem;
-      border-top: 1px solid var(--border);
-    }
-
-    /* ── Responsive ─────────────────────────────────────────── */
-    @media (max-width: 600px) {
-      body { padding: 2.75rem 1.25rem 2.5rem; }
-    }
+    /* ── Responsive (page-specific) ─────────────────────────── */
     @media (max-width: 480px) {
-      body { padding: 2rem 1rem 2rem; font-size: 16px; }
-      header { flex-wrap: wrap; gap: 0.5rem; }
       .intro { flex-direction: column; gap: 1.25rem; }
       .intro-visual { width: 80px; height: 80px; align-self: center; }
       .intro-photo, .mobius-canvas { width: 80px; height: 80px; }
@@ -304,12 +212,13 @@
 
   <canvas id="flock" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;"></canvas>
 
+  <script src="/shared.js"></script>
   <script>
     // ── Möbius strip ────────────────────────────────────────────
     (function () {
       var c = document.getElementById('mobius');
       var ctx = c.getContext('2d');
-      var dpr = window.devicePixelRatio || 1;
+      var dpr = site.dpr;
       var S = 108;
       c.width = S * dpr;
       c.height = S * dpr;
@@ -332,15 +241,10 @@
       }
 
       function proj(p) {
-        var x = p[0], y = p[1], z = p[2];
         var ax = Math.sin(t * 0.7) * 0.6 + t * 0.12;
         var ay = t * 0.18;
-        var ca = Math.cos(ax), sa = Math.sin(ax);
-        var y1 = y * ca - z * sa;
-        var z1 = y * sa + z * ca;
-        var cb = Math.cos(ay), sb = Math.sin(ay);
-        var x2 = x * cb + z1 * sb;
-        return [S / 2 + x2 * 34, S / 2 + y1 * 34];
+        var r = site.rotateXY(p[0], p[1], p[2], ax, ay);
+        return [S / 2 + r[0] * 34, S / 2 + r[1] * 34];
       }
 
       function stroke(v, steps) {
@@ -353,18 +257,9 @@
         ctx.stroke();
       }
 
-      var fg = '';
-      function readFg() {
-        fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
-      }
-      readFg();
-      if (window.matchMedia) {
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readFg);
-      }
-
       function draw() {
         ctx.clearRect(0, 0, S, S);
-        ctx.strokeStyle = fg;
+        ctx.strokeStyle = site.colors.fg;
 
         ctx.lineWidth = 1.2;
         ctx.globalAlpha = 0.75;
@@ -398,7 +293,7 @@
     (function () {
       var c = document.getElementById('flock');
       var ctx = c.getContext('2d');
-      var dpr = window.devicePixelRatio || 1;
+      var dpr = site.dpr;
       var W, H;
 
       function resize() {
@@ -410,15 +305,6 @@
       }
       resize();
       window.addEventListener('resize', resize);
-
-      var fg = '';
-      function readFg() {
-        fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
-      }
-      readFg();
-      if (window.matchMedia) {
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readFg);
-      }
 
       var N = 100;
       var CELL = 50;
@@ -505,7 +391,6 @@
         ctx.clearRect(0, 0, W, H);
         step();
 
-        // clip to margins only (outside the 700px content column)
         var contentW = 700;
         var marginL = (W - contentW) / 2;
         var marginR = marginL + contentW;
@@ -515,10 +400,9 @@
         ctx.rect(marginR, 0, W - marginR, H);
         ctx.clip();
 
-        ctx.strokeStyle = fg;
+        ctx.strokeStyle = site.colors.fg;
         ctx.lineWidth = 0.5;
 
-        // connection lines only
         for (var i = 0; i < N; i++) {
           var b = boids[i];
           var col = Math.min(Math.max(Math.floor(b.x / CELL), 0), gridCols - 1);

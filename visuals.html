@@ -7,79 +7,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/style.css">
   <style>
-    :root {
-      --bg:     #fafaf8;
-      --fg:     #1a1a18;
-      --muted:  #888;
-      --border: #e2e2de;
-      --serif:   'Source Serif 4', Georgia, serif;
-      --display: 'Crimson Pro', Georgia, serif;
-      --sans:    'Inter', system-ui, -apple-system, sans-serif;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg:     #111110;
-        --fg:     #e4e4e0;
-        --muted:  #666;
-        --border: #252523;
-      }
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html { font-size: 17px; }
-    body {
-      background: var(--bg);
-      color: var(--fg);
-      font-family: var(--serif);
-      line-height: 1.65;
-      padding: 4rem 1.5rem 3rem;
-      max-width: 960px;
-      margin: 0 auto;
-    }
-    a {
-      color: inherit;
-      text-decoration: underline;
-      text-decoration-color: var(--border);
-      text-underline-offset: 3px;
-      transition: text-decoration-color 0.15s;
-    }
-    a:hover { text-decoration-color: var(--fg); }
-
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding-bottom: 1.1rem;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 2.75rem;
-    }
-    .site-name {
-      font-family: var(--display);
-      font-size: 1.15rem;
-      font-weight: 400;
-      letter-spacing: 0.01em;
-    }
-    nav {
-      font-family: var(--sans);
-      font-size: 0.85rem;
-    }
-    nav a {
-      color: var(--muted);
-      text-decoration: none;
-      margin-left: 1.5rem;
-    }
-    nav a:hover { color: var(--fg); }
-
-    .label {
-      font-family: var(--sans);
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--muted);
-      margin-bottom: 1.5rem;
-    }
+    body { max-width: 960px; }
+    .label { margin-bottom: 1.5rem; }
 
     .grid {
       display: grid;
@@ -104,14 +35,6 @@
       color: var(--muted);
       margin-top: 0.6rem;
       text-align: center;
-    }
-
-    footer {
-      font-family: var(--sans);
-      font-size: 0.78rem;
-      color: var(--muted);
-      padding-top: 1.1rem;
-      border-top: 1px solid var(--border);
     }
 
     /* Expanded overlay */
@@ -209,8 +132,6 @@
       .grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 480px) {
-      body { padding: 2rem 1rem 2rem; }
-      header { flex-wrap: wrap; gap: 0.5rem; }
       .grid { grid-template-columns: 1fr; }
       .cell canvas { width: 200px; height: 200px; }
       .overlay-frame canvas { width: 280px; height: 280px; }
@@ -256,40 +177,27 @@
     </div>
   </div>
 
+  <script src="/shared.js"></script>
   <script>
-    // Shared utilities
+    // Page-level aliases from shared.js
     const S = 200;
     const S_SMALL = 200;
     const S_LARGE = 400;
-    const dpr = window.devicePixelRatio || 1;
-    let fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
+    const dpr = site.dpr;
+    let fg = site.colors.fg;
 
-    function readFg() {
-      fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
-    }
+    // Keep fg in sync (shared.js updates site.colors, we mirror here for existing code)
+    function readFg() { fg = site.colors.fg; }
     if (window.matchMedia) {
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readFg);
     }
 
     function initCanvas(id) {
-      const c = document.getElementById(id);
-      c.width = S * dpr;
-      c.height = S * dpr;
-      c.style.width = S + 'px';
-      c.style.height = S + 'px';
-      const ctx = c.getContext('2d');
-      ctx.scale(dpr, dpr);
-      return ctx;
+      var obj = site.initCanvas(id, S);
+      return obj ? obj.ctx : null;
     }
 
-    function rotateXY(x, y, z, ax, ay) {
-      const ca = Math.cos(ax), sa = Math.sin(ax);
-      const y1 = y * ca - z * sa;
-      const z1 = y * sa + z * ca;
-      const cb = Math.cos(ay), sb = Math.sin(ay);
-      const x2 = x * cb + z1 * sb;
-      return [x2, y1];
-    }
+    const rotateXY = site.rotateXY;
 
     // ──────────────────────────────────────────────────────────────
     // 1. Mobius Strip
