@@ -94,6 +94,11 @@
       <div class="cell-label">Layered Ocean Waves</div>
       <div class="cell-desc">Fourier-composed stacked sine waves</div>
     </div>
+    <div class="cell">
+      <canvas id="c-mesh-interference"></canvas>
+      <div class="cell-label">3D Mesh + Interference</div>
+      <div class="cell-desc">Two sources on a 3D surface mesh</div>
+    </div>
   </div>
 
   <footer>taimur.sh</footer>
@@ -439,6 +444,86 @@
 
         ctx.globalAlpha = 1;
         t += 0.02;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ── 7. 3D Mesh + Interference (two sources) ──────────────
+    (function () {
+      var ctx = site.initCanvas('c-mesh-interference', S).ctx;
+      var COLS = 24, ROWS = 20, t = 0;
+      var tiltScale = 0.45;
+      var cosTilt = Math.cos(0.65);
+      // Two source positions in grid-space
+      var src1 = { x: -0.15, z: -0.1 };
+      var src2 = { x: 0.15, z: 0.1 };
+      var span = S * 0.85;
+
+      function height(gx, gz, time) {
+        var d1 = Math.sqrt((gx - src1.x * span) * (gx - src1.x * span) + (gz - src1.z * span) * (gz - src1.z * span));
+        var d2 = Math.sqrt((gx - src2.x * span) * (gx - src2.x * span) + (gz - src2.z * span) * (gz - src2.z * span));
+        var w1 = Math.sin(d1 * 0.08 - time * 2.5) * 14 / (1 + d1 * 0.012);
+        var w2 = Math.sin(d2 * 0.08 - time * 2.5) * 14 / (1 + d2 * 0.012);
+        return w1 + w2;
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        var cx = S / 2, cy = S / 2;
+
+        // Row lines
+        for (var r = 0; r <= ROWS; r++) {
+          ctx.beginPath();
+          ctx.strokeStyle = col.fg;
+          ctx.lineWidth = 0.6;
+          var depth = r / ROWS;
+          ctx.globalAlpha = 0.1 + 0.5 * depth;
+          for (var c = 0; c <= COLS; c++) {
+            var gx = (c / COLS - 0.5) * span;
+            var gz = (r / ROWS - 0.5) * span;
+            var h = height(gx, gz, t);
+            var px = cx + gx;
+            var py = cy + gz * tiltScale - h * cosTilt;
+            c === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+
+        // Column lines
+        for (var c = 0; c <= COLS; c++) {
+          ctx.beginPath();
+          ctx.strokeStyle = col.fg;
+          ctx.lineWidth = 0.4;
+          for (var r = 0; r <= ROWS; r++) {
+            var gx = (c / COLS - 0.5) * span;
+            var gz = (r / ROWS - 0.5) * span;
+            var h = height(gx, gz, t);
+            var depth = r / ROWS;
+            ctx.globalAlpha = 0.08 + 0.35 * depth;
+            var px = cx + gx;
+            var py = cy + gz * tiltScale - h * cosTilt;
+            r === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+
+        // Source markers
+        ctx.fillStyle = col.fg;
+        ctx.globalAlpha = 0.6;
+        for (var s = 0; s < 2; s++) {
+          var src = s === 0 ? src1 : src2;
+          var sx = cx + src.x * span;
+          var sz = src.z * span;
+          var sh = height(src.x * span, sz, t);
+          var sy = cy + sz * tiltScale - sh * cosTilt;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.globalAlpha = 1;
+        t += 0.015;
         requestAnimationFrame(draw);
       }
       draw();
