@@ -113,9 +113,10 @@
     /* ── Visual grid (matches visuals.html) ────────────────── */
     .visual-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 2rem;
       margin: 2.5rem 0;
+      justify-items: center;
     }
     .visual-cell {
       display: flex;
@@ -179,7 +180,6 @@
     <div class="visual-grid">
       <div class="visual-cell"><canvas id="wave-only"></canvas><div class="visual-label">the wave</div></div>
       <div class="visual-cell"><canvas id="particles-only"></canvas><div class="visual-label">the particles</div></div>
-      <div class="visual-cell"><canvas id="wave-particles"></canvas><div class="visual-label">the connection</div></div>
     </div>
 
     <div class="post-body">
@@ -231,12 +231,12 @@
 
     var ctx1 = initCanvas('wave-only');
     var ctx2 = initCanvas('particles-only');
-    var ctx3 = initCanvas('wave-particles');
+
 
     // ── Wave parameters ─────────────────────────────────────
-    var COLS = 16;
-    var ROWS = 12;
-    var AMP = 6;
+    var COLS = 10;
+    var ROWS = 8;
+    var AMP = 8;
     var FREQ = 0.4;
     var SPEED = 0.025;
     var t = 0;
@@ -278,9 +278,9 @@
           // orbit trail
           ctx.beginPath();
           ctx.strokeStyle = muted;
-          ctx.lineWidth = 0.5;
-          ctx.globalAlpha = 0.15;
-          ctx.arc(p.bx, p.by, AMP * 0.55, 0, Math.PI * 2);
+          ctx.lineWidth = 0.8;
+          ctx.globalAlpha = 0.35;
+          ctx.arc(p.bx, p.by, AMP * 0.6, 0, Math.PI * 2);
           ctx.stroke();
           // dot
           ctx.beginPath();
@@ -293,41 +293,11 @@
       ctx.globalAlpha = 1;
     }
 
-    // View 3: Both together
-    function drawCombined(ctx, time) {
-      ctx.clearRect(0, 0, S, S);
-      // wave lines
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 0.8;
-      ctx.globalAlpha = 0.35;
-      for (var r = 0; r < ROWS; r++) {
-        ctx.beginPath();
-        for (var c = 0; c < COLS; c++) {
-          var p = particlePos(c, r, time);
-          c === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
-        }
-        ctx.stroke();
-      }
-      // dots
-      ctx.fillStyle = fg;
-      ctx.globalAlpha = 0.8;
-      for (var r = 0; r < ROWS; r++) {
-        for (var c = 0; c < COLS; c++) {
-          var p = particlePos(c, r, time);
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      ctx.globalAlpha = 1;
-    }
-
     // ── Animation loop ──────────────────────────────────────
     function frame() {
       t += SPEED;
       drawWaveOnly(ctx1, t);
       drawParticlesOnly(ctx2, t);
-      drawCombined(ctx3, t);
       requestAnimationFrame(frame);
     }
     frame();
