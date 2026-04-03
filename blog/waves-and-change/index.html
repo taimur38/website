@@ -195,6 +195,10 @@
 
       <p>I keep seeing this pattern. Douglas Hofstadter calls it a <em>strange loop</em>: you think you're in a hierarchy, moving up or down through levels, but if you follow the path far enough you arrive exactly where you started. Change is like that. The individual action feels small and circular. The collective result is directional and powerful. And there is no point at which one becomes the other — it's the same thing, seen from two distances.</p>
     </div>
+
+    <div class="visual-grid" style="grid-template-columns: 1fr;">
+      <div class="visual-cell"><canvas id="penrose"></canvas><div class="visual-label">strange loop</div></div>
+    </div>
   </article>
 
   <footer>
@@ -310,6 +314,123 @@
       requestAnimationFrame(frame);
     }
     frame();
+
+    // ── Penrose stairs (strange loop) ───────────────────────
+    var ctxP = initCanvas('penrose');
+    var penroseT = 0;
+
+    // Isometric Penrose staircase — 4 flights of stairs, each ascending,
+    // that impossibly connect back to the start.
+    // Isometric basis vectors:
+    var isoRx = 12, isoRy = 6;    // "right" on ground plane
+    var isoLx = -12, isoLy = 6;   // "left" on ground plane (into screen)
+    var isoUp = -10;               // vertical rise per step
+
+    // Build the walking path: top-surface midpoints of each step
+    // 4 flights × 5 steps = 20 waypoints
+    var steps = [];
+    (function () {
+      var N = 5;
+      var ox = S / 2, oy = S / 2 + 30; // bottom corner of the staircase
+
+      // Flight 1: going "right" (SE in iso), ascending
+      for (var i = 0; i < N; i++) {
+        steps.push({ x: ox + isoRx * i, y: oy + isoRy * i + isoUp * i });
+      }
+      // Flight 2: going "back-left" (NE in iso), ascending
+      var c1x = ox + isoRx * N, c1y = oy + isoRy * N + isoUp * N;
+      for (var i = 0; i < N; i++) {
+        steps.push({ x: c1x + isoLx * i, y: c1y + isoLy * i + isoUp * i });
+      }
+      // Flight 3: going "left" (NW in iso), ascending
+      var c2x = c1x + isoLx * N, c2y = c1y + isoLy * N + isoUp * N;
+      for (var i = 0; i < N; i++) {
+        steps.push({ x: c2x - isoRx * i, y: c2y - isoRy * i + isoUp * i });
+      }
+      // Flight 4: going "forward-right" (SW in iso), ascending — impossibly connects back
+      var c3x = c2x - isoRx * N, c3y = c2y - isoRy * N + isoUp * N;
+      for (var i = 0; i < N; i++) {
+        var frac = i / N;
+        steps.push({
+          x: c3x + (ox - c3x) * frac,
+          y: c3y + (oy - c3y) * frac
+        });
+      }
+    })();
+
+    var totalSteps = steps.length;
+
+    // Draw the staircase structure (risers + treads)
+    function drawStairs(ctx) {
+      ctx.strokeStyle = fg;
+      ctx.lineWidth = 0.8;
+      ctx.globalAlpha = 0.25;
+
+      for (var i = 0; i < totalSteps; i++) {
+        var curr = steps[i];
+        var next = steps[(i + 1) % totalSteps];
+        // tread
+        ctx.beginPath();
+        ctx.moveTo(curr.x, curr.y);
+        ctx.lineTo(next.x, next.y);
+        ctx.stroke();
+        // riser
+        var riserH = 6;
+        ctx.beginPath();
+        ctx.moveTo(curr.x, curr.y);
+        ctx.lineTo(curr.x, curr.y + riserH);
+        ctx.stroke();
+      }
+    }
+
+    // Interpolate position along the step path
+    function getPos(pos) {
+      while (pos < 0) pos += totalSteps;
+      pos = pos % totalSteps;
+      var idx = Math.floor(pos);
+      var frac = pos - idx;
+      var a = steps[idx % totalSteps];
+      var b = steps[(idx + 1) % totalSteps];
+      return { x: a.x + (b.x - a.x) * frac, y: a.y + (b.y - a.y) * frac };
+    }
+
+    function drawPenrose(ctx, time) {
+      ctx.clearRect(0, 0, S, S);
+      drawStairs(ctx);
+
+      var pos = (time * 0.5) % totalSteps;
+
+      // Trail
+      ctx.strokeStyle = fg;
+      ctx.lineWidth = 1.2;
+      var trailLen = 12;
+      for (var i = 1; i < trailLen; i++) {
+        var p0 = getPos(pos - (trailLen - i + 1) * 0.25);
+        var p1 = getPos(pos - (trailLen - i) * 0.25);
+        ctx.globalAlpha = 0.05 + 0.45 * (i / trailLen);
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
+
+      // Dot
+      var p = getPos(pos);
+      ctx.fillStyle = fg;
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalAlpha = 1;
+    }
+
+    function framePenrose() {
+      penroseT += 0.06;
+      drawPenrose(ctxP, penroseT);
+      requestAnimationFrame(framePenrose);
+    }
+    framePenrose();
   })();
   </script>
 </body>
