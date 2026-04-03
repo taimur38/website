@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wave Visualizations — Taimur Shah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { max-width: 960px; }
+    .label { margin-bottom: 1.5rem; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    .cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .cell canvas {
+      width: 200px;
+      height: 200px;
+      display: block;
+    }
+    .cell-label {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.6rem;
+      text-align: center;
+    }
+    .cell-desc {
+      font-family: var(--sans);
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+      text-align: center;
+      max-width: 200px;
+      opacity: 0.7;
+    }
+    @media (max-width: 780px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="site-name" style="text-decoration:none">Taimur Shah</a>
+    <nav>
+      <a href="/">home</a>
+      <a href="/visuals">visuals</a>
+    </nav>
+  </header>
+
+  <p class="label">Wave Visualizations</p>
+
+  <div class="grid">
+    <div class="cell">
+      <canvas id="c-current"></canvas>
+      <div class="cell-label">Current (Parallel Lines)</div>
+      <div class="cell-desc">What we have now</div>
+    </div>
+    <div class="cell">
+      <canvas id="c-surface"></canvas>
+      <div class="cell-label">3D Surface Mesh</div>
+      <div class="cell-desc">Wave as a rippling cloth seen from an angle</div>
+    </div>
+    <div class="cell">
+      <canvas id="c-ripples"></canvas>
+      <div class="cell-label">Concentric Ripples</div>
+      <div class="cell-desc">Two sources creating interference</div>
+    </div>
+    <div class="cell">
+      <canvas id="c-wavefront"></canvas>
+      <div class="cell-label">Wavefront Propagation</div>
+      <div class="cell-desc">A wavefront sweeping through particles</div>
+    </div>
+    <div class="cell">
+      <canvas id="c-standing"></canvas>
+      <div class="cell-label">Standing Wave</div>
+      <div class="cell-desc">Nodes stay still, antinodes oscillate</div>
+    </div>
+    <div class="cell">
+      <canvas id="c-ocean"></canvas>
+      <div class="cell-label">Layered Ocean Waves</div>
+      <div class="cell-desc">Fourier-composed stacked sine waves</div>
+    </div>
+  </div>
+
+  <footer>taimur.sh</footer>
+
+  <script src="/shared.js"></script>
+  <script>
+  (function () {
+    var S = 200;
+    var col = site.colors;
+
+    // ── 1. Current (parallel wave lines) ────────────────────
+    (function () {
+      var ctx = site.initCanvas('c-current', S).ctx;
+      var COLS = 10, ROWS = 8, AMP = 8, FREQ = 0.4, SPEED = 0.025, t = 0;
+      function pos(c, r, time) {
+        var sx = S / (COLS + 1), sy = S / (ROWS + 1);
+        var bx = (c + 1) * sx, by = (r + 1) * sy;
+        var ph = c * FREQ + time;
+        return { x: bx + Math.cos(ph) * AMP * 0.3, y: by + Math.sin(ph) * AMP };
+      }
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        ctx.strokeStyle = col.fg;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.5;
+        for (var r = 0; r < ROWS; r++) {
+          ctx.beginPath();
+          for (var c = 0; c < COLS; c++) {
+            var p = pos(c, r, t);
+            c === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+          }
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        t += SPEED;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ── 2. 3D Surface Mesh ──────────────────────────────────
+    (function () {
+      var ctx = site.initCanvas('c-surface', S).ctx;
+      var COLS = 20, ROWS = 16, t = 0;
+      var tiltX = 0.65, tiltScale = 0.45;
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        var cx = S / 2, cy = S / 2;
+        var spacingX = S / (COLS + 1);
+        var spacingZ = S / (ROWS + 1);
+
+        // Draw row lines (along x)
+        for (var r = 0; r < ROWS; r++) {
+          ctx.beginPath();
+          ctx.strokeStyle = col.fg;
+          ctx.lineWidth = 0.7;
+          var backToFront = (r / ROWS); // depth factor
+          ctx.globalAlpha = 0.15 + 0.45 * backToFront;
+          for (var c = 0; c <= COLS; c++) {
+            var gx = (c / COLS - 0.5) * S * 0.85;
+            var gz = (r / ROWS - 0.5) * S * 0.85;
+            var dist = Math.sqrt(gx * gx + gz * gz);
+            var height = Math.sin(dist * 0.06 - t * 2) * 18 * Math.exp(-dist * 0.008);
+            // Isometric-ish projection
+            var px = cx + gx;
+            var py = cy + gz * tiltScale - height * Math.cos(tiltX);
+            c === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+
+        // Draw column lines (along z)
+        for (var c = 0; c < COLS; c++) {
+          ctx.beginPath();
+          ctx.strokeStyle = col.fg;
+          ctx.lineWidth = 0.5;
+          for (var r = 0; r <= ROWS; r++) {
+            var gx = (c / COLS - 0.5) * S * 0.85;
+            var gz = (r / ROWS - 0.5) * S * 0.85;
+            var dist = Math.sqrt(gx * gx + gz * gz);
+            var height = Math.sin(dist * 0.06 - t * 2) * 18 * Math.exp(-dist * 0.008);
+            var backToFront = (r / ROWS);
+            ctx.globalAlpha = 0.1 + 0.3 * backToFront;
+            var px = cx + gx;
+            var py = cy + gz * tiltScale - height * Math.cos(tiltX);
+            r === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1;
+        t += 0.015;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ── 3. Concentric Ripples with Interference ─────────────
+    (function () {
+      var ctx = site.initCanvas('c-ripples', S).ctx;
+      var t = 0;
+      // Two sources
+      var s1 = { x: S * 0.35, y: S * 0.4 };
+      var s2 = { x: S * 0.65, y: S * 0.6 };
+      var RES = 80;
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        var imgData = ctx.createImageData(RES, RES);
+        var data = imgData.data;
+
+        // Get fg color as rgb
+        var fgHex = col.fg;
+        var fr = 26, fg2 = 26, fb = 24; // defaults for light mode
+        if (fgHex.charAt(0) === '#' && fgHex.length === 7) {
+          fr = parseInt(fgHex.substring(1, 3), 16);
+          fg2 = parseInt(fgHex.substring(3, 5), 16);
+          fb = parseInt(fgHex.substring(5, 7), 16);
+        }
+
+        for (var y = 0; y < RES; y++) {
+          for (var x = 0; x < RES; x++) {
+            var px = (x / RES) * S;
+            var py = (y / RES) * S;
+            var d1 = Math.sqrt((px - s1.x) * (px - s1.x) + (py - s1.y) * (py - s1.y));
+            var d2 = Math.sqrt((px - s2.x) * (px - s2.x) + (py - s2.y) * (py - s2.y));
+            var wave = Math.sin(d1 * 0.15 - t * 3) + Math.sin(d2 * 0.15 - t * 3);
+            var amp = (wave + 2) / 4; // normalize 0-1
+            var alpha = amp * 0.5;
+            var idx = (y * RES + x) * 4;
+            data[idx] = fr;
+            data[idx + 1] = fg2;
+            data[idx + 2] = fb;
+            data[idx + 3] = Math.floor(alpha * 255);
+          }
+        }
+
+        // Draw at low res then scale
+        var tmp = document.createElement('canvas');
+        tmp.width = RES;
+        tmp.height = RES;
+        var tmpCtx = tmp.getContext('2d');
+        tmpCtx.putImageData(imgData, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(tmp, 0, 0, S, S);
+
+        // Draw source points
+        ctx.fillStyle = col.fg;
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.arc(s1.x, s1.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(s2.x, s2.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        t += 0.02;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ── 4. Wavefront Propagation ────────────────────────────
+    (function () {
+      var ctx = site.initCanvas('c-wavefront', S).ctx;
+      var COLS = 14, ROWS = 12, t = 0;
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        var sx = S / (COLS + 1), sy = S / (ROWS + 1);
+        var wavefrontX = ((t * 0.8) % 1.4 - 0.2) * S; // sweeps left to right, repeating
+        var waveWidth = 40;
+
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            var bx = (c + 1) * sx;
+            var by = (r + 1) * sy;
+            var dist = bx - wavefrontX;
+            // Particles displaced by the wavefront
+            var displacement = 0;
+            if (Math.abs(dist) < waveWidth) {
+              displacement = Math.sin((dist / waveWidth) * Math.PI) * 8;
+            }
+            var px = bx;
+            var py = by - displacement;
+
+            // Brightness based on proximity to wavefront
+            var proximity = 1 - Math.min(Math.abs(dist) / waveWidth, 1);
+            var alpha = 0.15 + 0.7 * proximity;
+
+            ctx.fillStyle = col.fg;
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+            ctx.arc(px, py, 1.5 + proximity * 1.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Draw the wavefront line
+        ctx.strokeStyle = col.fg;
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.2;
+        ctx.beginPath();
+        ctx.moveTo(wavefrontX, 0);
+        ctx.lineTo(wavefrontX, S);
+        ctx.stroke();
+
+        ctx.globalAlpha = 1;
+        t += 0.008;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ── 5. Standing Wave ────────────────────────────────────
+    (function () {
+      var ctx = site.initCanvas('c-standing', S).ctx;
+      var t = 0;
+      var N_POINTS = 80;
+      var AMP = 35;
+      var MODES = 3; // 3rd harmonic standing wave
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        var midY = S / 2;
+        var margin = 20;
+        var width = S - 2 * margin;
+
+        // Draw the two traveling waves faintly
+        ctx.strokeStyle = col.fg;
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.12;
+        for (var dir = -1; dir <= 1; dir += 2) {
+          ctx.beginPath();
+          for (var i = 0; i <= N_POINTS; i++) {
+            var frac = i / N_POINTS;
+            var x = margin + frac * width;
+            var y = midY + Math.sin(frac * Math.PI * MODES * 2 + dir * t * 3) * AMP * 0.5;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+
+        // Draw the standing wave (sum)
+        ctx.strokeStyle = col.fg;
+        ctx.lineWidth = 1.2;
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        for (var i = 0; i <= N_POINTS; i++) {
+          var frac = i / N_POINTS;
+          var x = margin + frac * width;
+          // Standing wave = 2 * sin(kx) * cos(wt)
+          var envelope = Math.sin(frac * Math.PI * MODES);
+          var y = midY + envelope * Math.cos(t * 3) * AMP;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Mark nodes (zero crossings of the envelope)
+        ctx.fillStyle = col.fg;
+        ctx.globalAlpha = 0.4;
+        for (var n = 0; n <= MODES; n++) {
+          var frac = n / MODES;
+          var x = margin + frac * width;
+          ctx.beginPath();
+          ctx.arc(x, midY, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Mark antinodes
+        ctx.globalAlpha = 0.2;
+        for (var n = 0; n < MODES; n++) {
+          var frac = (n + 0.5) / MODES;
+          var x = margin + frac * width;
+          ctx.beginPath();
+          ctx.setLineDash([2, 3]);
+          ctx.moveTo(x, midY - AMP - 5);
+          ctx.lineTo(x, midY + AMP + 5);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        ctx.globalAlpha = 1;
+        t += 0.02;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+    // ── 6. Layered Ocean Waves ──────────────────────────────
+    (function () {
+      var ctx = site.initCanvas('c-ocean', S).ctx;
+      var t = 0;
+
+      // Several wave components with different frequencies, amplitudes, speeds
+      var layers = [
+        { freq: 0.02, amp: 18, speed: 0.8,  alpha: 0.5,  lw: 1.2 },
+        { freq: 0.035, amp: 12, speed: 1.2, alpha: 0.35, lw: 0.9 },
+        { freq: 0.055, amp: 7,  speed: 1.8, alpha: 0.25, lw: 0.7 },
+        { freq: 0.09, amp: 4,  speed: 2.5,  alpha: 0.15, lw: 0.5 },
+        { freq: 0.14, amp: 2,  speed: 3.5,  alpha: 0.1,  lw: 0.4 },
+      ];
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        var baseY = S * 0.5;
+
+        // Draw each layer
+        for (var l = 0; l < layers.length; l++) {
+          var layer = layers[l];
+          ctx.strokeStyle = col.fg;
+          ctx.lineWidth = layer.lw;
+          ctx.globalAlpha = layer.alpha;
+
+          ctx.beginPath();
+          for (var x = 0; x <= S; x += 2) {
+            var y = baseY;
+            // This layer's contribution
+            y += Math.sin(x * layer.freq - t * layer.speed) * layer.amp;
+            // Add a slight unique offset per layer so they don't overlap perfectly
+            y += l * 4 - (layers.length * 2);
+            x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+
+        // Draw the composite wave (sum of all)
+        ctx.strokeStyle = col.fg;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.65;
+        ctx.beginPath();
+        for (var x = 0; x <= S; x += 2) {
+          var y = baseY;
+          for (var l = 0; l < layers.length; l++) {
+            var layer = layers[l];
+            y += Math.sin(x * layer.freq - t * layer.speed) * layer.amp;
+          }
+          x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        ctx.globalAlpha = 1;
+        t += 0.02;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
+
+  })();
+  </script>
+</body>
+</html>
