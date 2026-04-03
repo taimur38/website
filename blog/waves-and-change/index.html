@@ -269,24 +269,30 @@
       ctx.globalAlpha = 1;
     }
 
-    // View 2: Just the particles bobbing in circles
+    // View 2: Particles with trace trails
+    var TRAIL_LEN = 20;
     function drawParticlesOnly(ctx, time) {
       ctx.clearRect(0, 0, S, S);
       for (var r = 0; r < ROWS; r++) {
         for (var c = 0; c < COLS; c++) {
-          var p = particlePos(c, r, time);
-          // orbit trail
-          ctx.beginPath();
+          // draw fading trail by sampling recent positions
           ctx.strokeStyle = muted;
           ctx.lineWidth = 0.8;
-          ctx.globalAlpha = 0.35;
-          ctx.arc(p.bx, p.by, AMP * 0.6, 0, Math.PI * 2);
-          ctx.stroke();
+          for (var i = 1; i < TRAIL_LEN; i++) {
+            var prev = particlePos(c, r, time - (TRAIL_LEN - i + 1) * SPEED);
+            var curr = particlePos(c, r, time - (TRAIL_LEN - i) * SPEED);
+            ctx.globalAlpha = 0.08 + 0.3 * (i / TRAIL_LEN);
+            ctx.beginPath();
+            ctx.moveTo(prev.x, prev.y);
+            ctx.lineTo(curr.x, curr.y);
+            ctx.stroke();
+          }
           // dot
+          var p = particlePos(c, r, time);
           ctx.beginPath();
           ctx.fillStyle = fg;
-          ctx.globalAlpha = 0.6;
-          ctx.arc(p.x, p.y, 1.8, 0, Math.PI * 2);
+          ctx.globalAlpha = 0.7;
+          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
           ctx.fill();
         }
       }
