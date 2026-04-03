@@ -40,7 +40,7 @@
       font-family: var(--serif);
       line-height: 1.65;
       padding: 4rem 1.5rem 3rem;
-      max-width: 700px;
+      max-width: 960px;
       margin: 0 auto;
     }
     a {
@@ -110,34 +110,33 @@
     }
     blockquote p { font-size: 0.95rem !important; }
 
-    /* ── Canvas containers ──────────────────────────────────── */
-    .visual-group {
+    /* ── Visual grid (matches visuals.html) ────────────────── */
+    .visual-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
       margin: 2.5rem 0;
     }
-    .visual-row {
+    .visual-cell {
       display: flex;
-      gap: 1px;
-      margin-bottom: 1px;
-      border-radius: 6px;
-      overflow: hidden;
+      flex-direction: column;
+      align-items: center;
     }
-    .visual-row canvas {
-      flex: 1;
+    .visual-cell canvas {
+      width: 200px;
+      height: 200px;
       display: block;
-      background: var(--bg);
     }
-    .visual-labels {
-      display: flex;
-      gap: 1px;
-    }
-    .visual-labels span {
-      flex: 1;
-      text-align: center;
+    .visual-label {
       font-family: var(--sans);
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       color: var(--muted);
-      padding-top: 0.5rem;
-      letter-spacing: 0.06em;
+      margin-top: 0.6rem;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      .visual-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+      .visual-cell canvas { width: 180px; height: 180px; }
     }
 
     /* ── Footer ─────────────────────────────────────────────── */
@@ -177,17 +176,10 @@
     <p class="post-meta">April 2026</p>
     <h1 class="post-title">Waves and Change</h1>
 
-    <div class="visual-group">
-      <div class="visual-row">
-        <canvas id="wave-only" width="600" height="240"></canvas>
-        <canvas id="particles-only" width="600" height="240"></canvas>
-        <canvas id="wave-particles" width="600" height="240"></canvas>
-      </div>
-      <div class="visual-labels">
-        <span>the wave</span>
-        <span>the particles</span>
-        <span>the connection</span>
-      </div>
+    <div class="visual-grid">
+      <div class="visual-cell"><canvas id="wave-only"></canvas><div class="visual-label">the wave</div></div>
+      <div class="visual-cell"><canvas id="particles-only"></canvas><div class="visual-label">the particles</div></div>
+      <div class="visual-cell"><canvas id="wave-particles"></canvas><div class="visual-label">the connection</div></div>
     </div>
 
     <div class="post-body">
@@ -211,52 +203,47 @@
 
   <script>
   (function () {
+    var S = 200;
     var dpr = window.devicePixelRatio || 1;
     var fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
-    var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
     var muted = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+    var accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+
+    function readColors() {
+      fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
+      muted = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
+      accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    }
     if (window.matchMedia) {
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
-        fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
-        accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-        muted = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim();
-      });
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
     }
 
-    // ── Setup canvases ──────────────────────────────────────
-    function setupCanvas(id) {
+    function initCanvas(id) {
       var c = document.getElementById(id);
-      var rect = c.getBoundingClientRect();
-      var w = rect.width || 200;
-      var h = rect.height || 240;
-      c.width = w * dpr;
-      c.height = h * dpr;
+      c.width = S * dpr;
+      c.height = S * dpr;
+      c.style.width = S + 'px';
+      c.style.height = S + 'px';
       var ctx = c.getContext('2d');
       ctx.scale(dpr, dpr);
-      return { c: c, ctx: ctx, w: w, h: h };
+      return ctx;
     }
 
-    var c1 = setupCanvas('wave-only');
-    var c2 = setupCanvas('particles-only');
-    var c3 = setupCanvas('wave-particles');
-
-    window.addEventListener('resize', function () {
-      c1 = setupCanvas('wave-only');
-      c2 = setupCanvas('particles-only');
-      c3 = setupCanvas('wave-particles');
-    });
+    var ctx1 = initCanvas('wave-only');
+    var ctx2 = initCanvas('particles-only');
+    var ctx3 = initCanvas('wave-particles');
 
     // ── Wave parameters ─────────────────────────────────────
-    var COLS = 28;
+    var COLS = 16;
     var ROWS = 12;
-    var AMP = 8;
-    var FREQ = 0.35;
-    var SPEED = 0.03;
+    var AMP = 6;
+    var FREQ = 0.4;
+    var SPEED = 0.025;
     var t = 0;
 
-    function particlePos(col, row, w, h, time) {
-      var spacingX = w / (COLS + 1);
-      var spacingY = h / (ROWS + 1);
+    function particlePos(col, row, time) {
+      var spacingX = S / (COLS + 1);
+      var spacingY = S / (ROWS + 1);
       var baseX = (col + 1) * spacingX;
       var baseY = (row + 1) * spacingY;
       var phase = col * FREQ + time;
@@ -265,40 +252,37 @@
       return { bx: baseX, by: baseY, x: baseX + offsetX, y: baseY + offsetY };
     }
 
-    // ── Draw functions ──────────────────────────────────────
-
-    // View 1: Just the wave lines, no particles visible
-    function drawWaveOnly(ctx, w, h, time) {
-      ctx.clearRect(0, 0, w, h);
+    // View 1: Just the wave lines
+    function drawWaveOnly(ctx, time) {
+      ctx.clearRect(0, 0, S, S);
+      ctx.strokeStyle = fg;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.5;
       for (var r = 0; r < ROWS; r++) {
         ctx.beginPath();
-        ctx.strokeStyle = fg;
-        ctx.lineWidth = 1;
-        ctx.globalAlpha = 0.5;
         for (var c = 0; c < COLS; c++) {
-          var p = particlePos(c, r, w, h, time);
-          if (c === 0) ctx.moveTo(p.x, p.y);
-          else ctx.lineTo(p.x, p.y);
+          var p = particlePos(c, r, time);
+          c === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
         }
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
     }
 
-    // View 2: Just the particles, no connections — looks like random bobbing
-    function drawParticlesOnly(ctx, w, h, time) {
-      ctx.clearRect(0, 0, w, h);
+    // View 2: Just the particles bobbing in circles
+    function drawParticlesOnly(ctx, time) {
+      ctx.clearRect(0, 0, S, S);
       for (var r = 0; r < ROWS; r++) {
         for (var c = 0; c < COLS; c++) {
-          var p = particlePos(c, r, w, h, time);
-          // Draw small orbit trail
+          var p = particlePos(c, r, time);
+          // orbit trail
           ctx.beginPath();
           ctx.strokeStyle = muted;
           ctx.lineWidth = 0.5;
-          ctx.globalAlpha = 0.2;
-          ctx.arc(p.bx, p.by, AMP * 0.6, 0, Math.PI * 2);
+          ctx.globalAlpha = 0.15;
+          ctx.arc(p.bx, p.by, AMP * 0.55, 0, Math.PI * 2);
           ctx.stroke();
-          // Draw particle
+          // dot
           ctx.beginPath();
           ctx.fillStyle = fg;
           ctx.globalAlpha = 0.6;
@@ -309,29 +293,28 @@
       ctx.globalAlpha = 1;
     }
 
-    // View 3: Both — particles connected by wave lines
-    function drawCombined(ctx, w, h, time) {
-      ctx.clearRect(0, 0, w, h);
-      // Wave lines
+    // View 3: Both together
+    function drawCombined(ctx, time) {
+      ctx.clearRect(0, 0, S, S);
+      // wave lines
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 0.8;
+      ctx.globalAlpha = 0.35;
       for (var r = 0; r < ROWS; r++) {
         ctx.beginPath();
-        ctx.strokeStyle = accent;
-        ctx.lineWidth = 0.8;
-        ctx.globalAlpha = 0.35;
         for (var c = 0; c < COLS; c++) {
-          var p = particlePos(c, r, w, h, time);
-          if (c === 0) ctx.moveTo(p.x, p.y);
-          else ctx.lineTo(p.x, p.y);
+          var p = particlePos(c, r, time);
+          c === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
         }
         ctx.stroke();
       }
-      // Particles
+      // dots
+      ctx.fillStyle = fg;
+      ctx.globalAlpha = 0.8;
       for (var r = 0; r < ROWS; r++) {
         for (var c = 0; c < COLS; c++) {
-          var p = particlePos(c, r, w, h, time);
+          var p = particlePos(c, r, time);
           ctx.beginPath();
-          ctx.fillStyle = fg;
-          ctx.globalAlpha = 0.8;
           ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
           ctx.fill();
         }
@@ -342,9 +325,9 @@
     // ── Animation loop ──────────────────────────────────────
     function frame() {
       t += SPEED;
-      drawWaveOnly(c1.ctx, c1.w, c1.h, t);
-      drawParticlesOnly(c2.ctx, c2.w, c2.h, t);
-      drawCombined(c3.ctx, c3.w, c3.h, t);
+      drawWaveOnly(ctx1, t);
+      drawParticlesOnly(ctx2, t);
+      drawCombined(ctx3, t);
       requestAnimationFrame(frame);
     }
     frame();
