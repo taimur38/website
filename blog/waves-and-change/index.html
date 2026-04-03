@@ -270,18 +270,21 @@
     }
 
     // View 2: Particles with trace trails
-    var TRAIL_LEN = 20;
+    var TRAIL_STEPS = 40;
+    var TRAIL_STEP_SIZE = 0.12; // sample further back in time
     function drawParticlesOnly(ctx, time) {
       ctx.clearRect(0, 0, S, S);
       for (var r = 0; r < ROWS; r++) {
         for (var c = 0; c < COLS; c++) {
-          // draw fading trail by sampling recent positions
-          ctx.strokeStyle = muted;
-          ctx.lineWidth = 0.8;
-          for (var i = 1; i < TRAIL_LEN; i++) {
-            var prev = particlePos(c, r, time - (TRAIL_LEN - i + 1) * SPEED);
-            var curr = particlePos(c, r, time - (TRAIL_LEN - i) * SPEED);
-            ctx.globalAlpha = 0.08 + 0.3 * (i / TRAIL_LEN);
+          // draw fading trail by sampling past positions
+          ctx.strokeStyle = fg;
+          ctx.lineWidth = 1.2;
+          for (var i = 1; i < TRAIL_STEPS; i++) {
+            var tPrev = time - (TRAIL_STEPS - i + 1) * TRAIL_STEP_SIZE;
+            var tCurr = time - (TRAIL_STEPS - i) * TRAIL_STEP_SIZE;
+            var prev = particlePos(c, r, tPrev);
+            var curr = particlePos(c, r, tCurr);
+            ctx.globalAlpha = 0.05 + 0.4 * (i / TRAIL_STEPS);
             ctx.beginPath();
             ctx.moveTo(prev.x, prev.y);
             ctx.lineTo(curr.x, curr.y);
@@ -291,8 +294,8 @@
           var p = particlePos(c, r, time);
           ctx.beginPath();
           ctx.fillStyle = fg;
-          ctx.globalAlpha = 0.7;
-          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+          ctx.globalAlpha = 0.8;
+          ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
           ctx.fill();
         }
       }
