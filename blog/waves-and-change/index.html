@@ -269,33 +269,44 @@
       ctx.globalAlpha = 1;
     }
 
-    // View 2: Particles with trace trails
-    var TRAIL_STEPS = 40;
-    var TRAIL_STEP_SIZE = 0.12; // sample further back in time
+    // View 2: Particles on ellipse orbits with moving opacity
+    var ELLIPSE_SEGS = 60;
     function drawParticlesOnly(ctx, time) {
       ctx.clearRect(0, 0, S, S);
+      var radiusX = AMP * 0.3;
+      var radiusY = AMP;
       for (var r = 0; r < ROWS; r++) {
         for (var c = 0; c < COLS; c++) {
-          // draw fading trail by sampling past positions
+          var spacingX = S / (COLS + 1);
+          var spacingY = S / (ROWS + 1);
+          var cx = (c + 1) * spacingX;
+          var cy = (r + 1) * spacingY;
+          var phase = c * FREQ + time;
+          // draw ellipse as segments with opacity that peaks near the particle
           ctx.strokeStyle = fg;
-          ctx.lineWidth = 1.2;
-          for (var i = 1; i < TRAIL_STEPS; i++) {
-            var tPrev = time - (TRAIL_STEPS - i + 1) * TRAIL_STEP_SIZE;
-            var tCurr = time - (TRAIL_STEPS - i) * TRAIL_STEP_SIZE;
-            var prev = particlePos(c, r, tPrev);
-            var curr = particlePos(c, r, tCurr);
-            ctx.globalAlpha = 0.05 + 0.4 * (i / TRAIL_STEPS);
+          ctx.lineWidth = 0.9;
+          for (var i = 0; i < ELLIPSE_SEGS; i++) {
+            var a0 = (i / ELLIPSE_SEGS) * Math.PI * 2;
+            var a1 = ((i + 1) / ELLIPSE_SEGS) * Math.PI * 2;
+            var midA = (a0 + a1) / 2;
+            // angular distance from current particle position on the ellipse
+            var particleAngle = phase % (Math.PI * 2);
+            if (particleAngle < 0) particleAngle += Math.PI * 2;
+            var diff = Math.abs(midA - particleAngle);
+            if (diff > Math.PI) diff = Math.PI * 2 - diff;
+            // opacity: bright near particle, faint far away
+            var alpha = 0.08 + 0.45 * Math.pow(1 - diff / Math.PI, 3);
+            ctx.globalAlpha = alpha;
             ctx.beginPath();
-            ctx.moveTo(prev.x, prev.y);
-            ctx.lineTo(curr.x, curr.y);
+            ctx.moveTo(cx + Math.cos(a0) * radiusX, cy + Math.sin(a0) * radiusY);
+            ctx.lineTo(cx + Math.cos(a1) * radiusX, cy + Math.sin(a1) * radiusY);
             ctx.stroke();
           }
           // dot
-          var p = particlePos(c, r, time);
           ctx.beginPath();
           ctx.fillStyle = fg;
-          ctx.globalAlpha = 0.8;
-          ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
+          ctx.globalAlpha = 0.85;
+          ctx.arc(cx + Math.cos(phase) * radiusX, cy + Math.sin(phase) * radiusY, 2.2, 0, Math.PI * 2);
           ctx.fill();
         }
       }
