@@ -464,7 +464,7 @@
         var d1 = Math.sqrt((gx - src1.x * span) * (gx - src1.x * span) + (gz - src1.z * span) * (gz - src1.z * span));
         var d2 = Math.sqrt((gx - src2.x * span) * (gx - src2.x * span) + (gz - src2.z * span) * (gz - src2.z * span));
         var w1 = Math.sin(d1 * 0.08 - time * 2.5) * 14 / (1 + d1 * 0.012);
-        var w2 = Math.sin(d2 * 0.08 - time * 2.5) * 14 / (1 + d2 * 0.012);
+        var w2 = Math.sin(d2 * 0.08 - time * 2.5 + 1.8) * 14 / (1 + d2 * 0.012);
         return w1 + w2;
       }
 
@@ -506,20 +506,6 @@
             r === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
           }
           ctx.stroke();
-        }
-
-        // Source markers
-        ctx.fillStyle = col.fg;
-        ctx.globalAlpha = 0.6;
-        for (var s = 0; s < 2; s++) {
-          var src = s === 0 ? src1 : src2;
-          var sx = cx + src.x * span;
-          var sz = src.z * span;
-          var sh = height(src.x * span, sz, t);
-          var sy = cy + sz * tiltScale - sh * cosTilt;
-          ctx.beginPath();
-          ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
-          ctx.fill();
         }
 
         ctx.globalAlpha = 1;

@@ -25,7 +25,7 @@
       font-size: 1.85rem;
       font-weight: 400;
       line-height: 1.3;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
     .post-body p {
       font-size: 1rem;
@@ -44,20 +44,27 @@
     }
     blockquote p { font-size: 0.95rem !important; }
 
-    /* ── Visual grid (matches visuals.html) ────────────────── */
-    .visual-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 2rem;
-      margin: 2.5rem 0;
-      justify-items: center;
+    /* ── Hero wave canvas ───────────────────────────────────── */
+    .hero-visual {
+      margin: 0 -1.5rem 2.5rem;
+      display: flex;
+      justify-content: center;
     }
-    .visual-cell {
+    .hero-visual canvas {
+      width: 100%;
+      max-width: 960px;
+      height: 260px;
+      display: block;
+    }
+
+    /* ── Particle visual (inline, centered) ─────────────────── */
+    .particle-visual {
       display: flex;
       flex-direction: column;
       align-items: center;
+      margin: 2rem 0;
     }
-    .visual-cell canvas {
+    .particle-visual canvas {
       width: 200px;
       height: 200px;
       display: block;
@@ -69,16 +76,28 @@
       margin-top: 0.6rem;
       text-align: center;
     }
-    @media (max-width: 480px) {
-      .visual-grid { grid-template-columns: 1fr; gap: 1.5rem; }
-      .visual-cell canvas { width: 180px; height: 180px; }
+
+    /* ── Penrose visual ─────────────────────────────────────── */
+    .penrose-visual {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 2.5rem 0;
+    }
+    .penrose-visual canvas {
+      width: 200px;
+      height: 200px;
+      display: block;
     }
 
     footer { margin-top: 3rem; }
 
-    /* ── Responsive (page-specific) ─────────────────────────── */
+    /* ── Responsive ─────────────────────────────────────────── */
     @media (max-width: 480px) {
       .post-title { font-size: 1.5rem; }
+      .hero-visual { margin: 0 -1rem 2rem; }
+      .hero-visual canvas { height: 180px; }
+      .particle-visual canvas { width: 180px; height: 180px; }
     }
   </style>
 </head>
@@ -96,14 +115,20 @@
     <p class="post-meta">April 2026</p>
     <h1 class="post-title">Waves and Change</h1>
 
-    <div class="visual-grid">
-      <div class="visual-cell"><canvas id="wave-only"></canvas><div class="visual-label">the wave</div></div>
-      <div class="visual-cell"><canvas id="particles-only"></canvas><div class="visual-label">the particles</div></div>
+    <div class="hero-visual">
+      <canvas id="hero-wave"></canvas>
     </div>
 
     <div class="post-body">
       <p>A wave looks like a single, sweeping force — something with direction and momentum, a thing that moves. But look closer and each particle in the wave is doing almost nothing. It bobs up, then down, tracing a small circle in place. No particle travels with the wave. The wave is an invisible force made visible only because it happens to pass through a medium, and each tiny part of that medium dances a quiet, private rhythm.</p>
+    </div>
 
+    <div class="particle-visual">
+      <canvas id="particles-only"></canvas>
+      <div class="visual-label">the particles</div>
+    </div>
+
+    <div class="post-body">
       <p>This is how change works, too. Everyone who has ever been part of something bigger — a movement, a shift, a slow turning of the world — has mostly just been bobbing. Doing their small thing. The wave is not any one person's contribution. It is what emerges when enough people dance in place at roughly the right time.</p>
 
       <blockquote>
@@ -115,8 +140,9 @@
       <p>I keep seeing this pattern. Douglas Hofstadter calls it a <em>strange loop</em>: you think you're in a hierarchy, moving up or down through levels, but if you follow the path far enough you arrive exactly where you started. Change is like that. The individual action feels small and circular. The collective result is directional and powerful. And there is no point at which one becomes the other — it's the same thing, seen from two distances.</p>
     </div>
 
-    <div class="visual-grid" style="grid-template-columns: 1fr;">
-      <div class="visual-cell"><canvas id="penrose"></canvas><div class="visual-label">strange loop</div></div>
+    <div class="penrose-visual">
+      <canvas id="penrose"></canvas>
+      <div class="visual-label">strange loop</div>
     </div>
   </article>
 
@@ -129,205 +155,240 @@
   (function () {
     var S = 200;
     var col = site.colors;
+    var dpr = site.dpr;
 
-    var ctx1 = site.initCanvas('wave-only', S).ctx;
-    var ctx2 = site.initCanvas('particles-only', S).ctx;
+    // ── Hero wave: 3D mesh with two-source interference ─────
+    (function () {
+      var c = document.getElementById('hero-wave');
+      var rect = c.getBoundingClientRect();
+      var W = rect.width || 960;
+      var H = rect.height || 260;
+      c.width = W * dpr;
+      c.height = H * dpr;
+      var ctx = c.getContext('2d');
+      ctx.scale(dpr, dpr);
 
+      var COLS = 48, ROWS = 22;
+      var tiltScale = 0.45;
+      var cosTilt = Math.cos(0.65);
+      var src1 = { x: -0.2, z: -0.15 };
+      var src2 = { x: 0.2, z: 0.12 };
+      var spanX = W * 0.9;
+      var spanZ = H * 1.8; // stretched in depth for perspective
+      var t = 0;
 
-    // ── Wave parameters ─────────────────────────────────────
-    var COLS = 10;
-    var ROWS = 8;
-    var AMP = 8;
-    var FREQ = 0.4;
-    var SPEED = 0.025;
-    var t = 0;
-
-    function particlePos(col, row, time) {
-      var spacingX = S / (COLS + 1);
-      var spacingY = S / (ROWS + 1);
-      var baseX = (col + 1) * spacingX;
-      var baseY = (row + 1) * spacingY;
-      var phase = col * FREQ + time;
-      var offsetY = Math.sin(phase) * AMP;
-      var offsetX = Math.cos(phase) * AMP * 0.3;
-      return { bx: baseX, by: baseY, x: baseX + offsetX, y: baseY + offsetY };
-    }
-
-    // View 1: Just the wave lines
-    function drawWaveOnly(ctx, time) {
-      ctx.clearRect(0, 0, S, S);
-      ctx.strokeStyle = col.fg;
-      ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.5;
-      for (var r = 0; r < ROWS; r++) {
-        ctx.beginPath();
-        for (var c = 0; c < COLS; c++) {
-          var p = particlePos(c, r, time);
-          c === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
-        }
-        ctx.stroke();
+      function height(gx, gz, time) {
+        var d1 = Math.sqrt((gx - src1.x * spanX) * (gx - src1.x * spanX) + (gz - src1.z * spanZ) * (gz - src1.z * spanZ));
+        var d2 = Math.sqrt((gx - src2.x * spanX) * (gx - src2.x * spanX) + (gz - src2.z * spanZ) * (gz - src2.z * spanZ));
+        var w1 = Math.sin(d1 * 0.04 - time * 2.5) * 16 / (1 + d1 * 0.005);
+        var w2 = Math.sin(d2 * 0.04 - time * 2.5 + 1.8) * 16 / (1 + d2 * 0.005);
+        return w1 + w2;
       }
-      ctx.globalAlpha = 1;
-    }
 
-    // View 2: Particles with trace trails
-    var TRAIL_STEPS = 40;
-    var TRAIL_STEP_SIZE = 0.12; // sample further back in time
-    function drawParticlesOnly(ctx, time) {
-      ctx.clearRect(0, 0, S, S);
-      for (var r = 0; r < ROWS; r++) {
-        for (var c = 0; c < COLS; c++) {
-          // draw fading trail by sampling past positions
-          ctx.strokeStyle = col.fg;
-          ctx.lineWidth = 1.2;
-          for (var i = 1; i < TRAIL_STEPS; i++) {
-            var tPrev = time - (TRAIL_STEPS - i + 1) * TRAIL_STEP_SIZE;
-            var tCurr = time - (TRAIL_STEPS - i) * TRAIL_STEP_SIZE;
-            var prev = particlePos(c, r, tPrev);
-            var curr = particlePos(c, r, tCurr);
-            ctx.globalAlpha = 0.05 + 0.4 * (i / TRAIL_STEPS);
-            ctx.beginPath();
-            ctx.moveTo(prev.x, prev.y);
-            ctx.lineTo(curr.x, curr.y);
-            ctx.stroke();
-          }
-          // dot
-          var p = particlePos(c, r, time);
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        var cx = W / 2, cy = H / 2 + 20;
+
+        // Row lines
+        for (var r = 0; r <= ROWS; r++) {
           ctx.beginPath();
-          ctx.fillStyle = col.fg;
-          ctx.globalAlpha = 0.8;
-          ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.strokeStyle = col.fg;
+          ctx.lineWidth = 0.6;
+          var depth = r / ROWS;
+          ctx.globalAlpha = 0.08 + 0.5 * depth;
+          for (var c = 0; c <= COLS; c++) {
+            var gx = (c / COLS - 0.5) * spanX;
+            var gz = (r / ROWS - 0.5) * spanZ;
+            var h = height(gx, gz, t);
+            var px = cx + gx;
+            var py = cy + gz * tiltScale - h * cosTilt;
+            c === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+          }
+          ctx.stroke();
         }
-      }
-      ctx.globalAlpha = 1;
-    }
 
-    // ── Animation loop ──────────────────────────────────────
-    function frame() {
-      t += SPEED;
-      drawWaveOnly(ctx1, t);
-      drawParticlesOnly(ctx2, t);
-      requestAnimationFrame(frame);
-    }
-    frame();
+        // Column lines
+        for (var c = 0; c <= COLS; c++) {
+          ctx.beginPath();
+          ctx.strokeStyle = col.fg;
+          ctx.lineWidth = 0.35;
+          for (var r = 0; r <= ROWS; r++) {
+            var gx = (c / COLS - 0.5) * spanX;
+            var gz = (r / ROWS - 0.5) * spanZ;
+            var h = height(gx, gz, t);
+            var depth = r / ROWS;
+            ctx.globalAlpha = 0.05 + 0.3 * depth;
+            var px = cx + gx;
+            var py = cy + gz * tiltScale - h * cosTilt;
+            r === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1;
+        t += 0.015;
+        requestAnimationFrame(draw);
+      }
+
+      window.addEventListener('resize', function () {
+        rect = c.getBoundingClientRect();
+        W = rect.width || 960;
+        H = rect.height || 260;
+        c.width = W * dpr;
+        c.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        spanX = W * 0.9;
+        COLS = Math.max(24, Math.floor(W / 20));
+      });
+
+      draw();
+    })();
+
+    // ── Particles with amplitude-scaled orbits ──────────────
+    (function () {
+      var ctx = site.initCanvas('particles-only', S).ctx;
+      var COLS = 10, ROWS = 8;
+      var BASE_AMP = 3;    // smallest orbit (at wave trough)
+      var MAX_AMP = 12;    // largest orbit (at wave peak)
+      var FREQ = 0.4;
+      var SPEED = 0.025;
+      var t = 0;
+      var TRAIL_STEPS = 40;
+      var TRAIL_STEP_SIZE = 0.12;
+
+      function particlePos(c, r, time) {
+        var sx = S / (COLS + 1), sy = S / (ROWS + 1);
+        var bx = (c + 1) * sx, by = (r + 1) * sy;
+        var phase = c * FREQ + time;
+        // Amplitude varies by row: top rows (wave peaks) have larger orbits
+        var rowFrac = 1 - r / (ROWS - 1); // 1 at top, 0 at bottom
+        var amp = BASE_AMP + (MAX_AMP - BASE_AMP) * rowFrac;
+        var offsetY = Math.sin(phase) * amp;
+        var offsetX = Math.cos(phase) * amp * 0.3;
+        return { x: bx + offsetX, y: by + offsetY };
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        for (var r = 0; r < ROWS; r++) {
+          for (var c = 0; c < COLS; c++) {
+            // trail
+            ctx.strokeStyle = col.fg;
+            ctx.lineWidth = 1.2;
+            for (var i = 1; i < TRAIL_STEPS; i++) {
+              var tPrev = t - (TRAIL_STEPS - i + 1) * TRAIL_STEP_SIZE;
+              var tCurr = t - (TRAIL_STEPS - i) * TRAIL_STEP_SIZE;
+              var prev = particlePos(c, r, tPrev);
+              var curr = particlePos(c, r, tCurr);
+              ctx.globalAlpha = 0.05 + 0.4 * (i / TRAIL_STEPS);
+              ctx.beginPath();
+              ctx.moveTo(prev.x, prev.y);
+              ctx.lineTo(curr.x, curr.y);
+              ctx.stroke();
+            }
+            // dot
+            var p = particlePos(c, r, t);
+            ctx.beginPath();
+            ctx.fillStyle = col.fg;
+            ctx.globalAlpha = 0.8;
+            ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
+        t += SPEED;
+        requestAnimationFrame(draw);
+      }
+      draw();
+    })();
 
     // ── Penrose stairs (strange loop) ───────────────────────
-    var ctxP = site.initCanvas('penrose', S).ctx;
-    var penroseT = 0;
-
-    // Isometric Penrose staircase — 4 flights of stairs, each ascending,
-    // that impossibly connect back to the start.
-    // Isometric basis vectors:
-    var isoRx = 12, isoRy = 6;    // "right" on ground plane
-    var isoLx = -12, isoLy = 6;   // "left" on ground plane (into screen)
-    var isoUp = -10;               // vertical rise per step
-
-    // Build the walking path: top-surface midpoints of each step
-    // 4 flights × 5 steps = 20 waypoints
-    var steps = [];
     (function () {
+      var ctx = site.initCanvas('penrose', S).ctx;
+      var penroseT = 0;
+      var isoRx = 12, isoRy = 6;
+      var isoLx = -12, isoLy = 6;
+      var isoUp = -10;
+      var steps = [];
       var N = 5;
-      var ox = S / 2, oy = S / 2 + 30; // bottom corner of the staircase
+      var ox = S / 2, oy = S / 2 + 30;
 
-      // Flight 1: going "right" (SE in iso), ascending
       for (var i = 0; i < N; i++) {
         steps.push({ x: ox + isoRx * i, y: oy + isoRy * i + isoUp * i });
       }
-      // Flight 2: going "back-left" (NE in iso), ascending
       var c1x = ox + isoRx * N, c1y = oy + isoRy * N + isoUp * N;
       for (var i = 0; i < N; i++) {
         steps.push({ x: c1x + isoLx * i, y: c1y + isoLy * i + isoUp * i });
       }
-      // Flight 3: going "left" (NW in iso), ascending
       var c2x = c1x + isoLx * N, c2y = c1y + isoLy * N + isoUp * N;
       for (var i = 0; i < N; i++) {
         steps.push({ x: c2x - isoRx * i, y: c2y - isoRy * i + isoUp * i });
       }
-      // Flight 4: going "forward-right" (SW in iso), ascending — impossibly connects back
       var c3x = c2x - isoRx * N, c3y = c2y - isoRy * N + isoUp * N;
       for (var i = 0; i < N; i++) {
         var frac = i / N;
-        steps.push({
-          x: c3x + (ox - c3x) * frac,
-          y: c3y + (oy - c3y) * frac
-        });
+        steps.push({ x: c3x + (ox - c3x) * frac, y: c3y + (oy - c3y) * frac });
       }
+
+      var totalSteps = steps.length;
+
+      function drawStairs() {
+        ctx.strokeStyle = col.fg;
+        ctx.lineWidth = 0.8;
+        ctx.globalAlpha = 0.25;
+        for (var i = 0; i < totalSteps; i++) {
+          var curr = steps[i];
+          var next = steps[(i + 1) % totalSteps];
+          ctx.beginPath();
+          ctx.moveTo(curr.x, curr.y);
+          ctx.lineTo(next.x, next.y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(curr.x, curr.y);
+          ctx.lineTo(curr.x, curr.y + 6);
+          ctx.stroke();
+        }
+      }
+
+      function getPos(pos) {
+        while (pos < 0) pos += totalSteps;
+        pos = pos % totalSteps;
+        var idx = Math.floor(pos);
+        var frac = pos - idx;
+        var a = steps[idx % totalSteps];
+        var b = steps[(idx + 1) % totalSteps];
+        return { x: a.x + (b.x - a.x) * frac, y: a.y + (b.y - a.y) * frac };
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, S, S);
+        drawStairs();
+        var pos = (penroseT * 0.5) % totalSteps;
+        ctx.strokeStyle = col.fg;
+        ctx.lineWidth = 1.2;
+        var trailLen = 12;
+        for (var i = 1; i < trailLen; i++) {
+          var p0 = getPos(pos - (trailLen - i + 1) * 0.25);
+          var p1 = getPos(pos - (trailLen - i) * 0.25);
+          ctx.globalAlpha = 0.05 + 0.45 * (i / trailLen);
+          ctx.beginPath();
+          ctx.moveTo(p0.x, p0.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.stroke();
+        }
+        var p = getPos(pos);
+        ctx.fillStyle = col.fg;
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        penroseT += 0.06;
+        requestAnimationFrame(draw);
+      }
+      draw();
     })();
 
-    var totalSteps = steps.length;
-
-    // Draw the staircase structure (risers + treads)
-    function drawStairs(ctx) {
-      ctx.strokeStyle = col.fg;
-      ctx.lineWidth = 0.8;
-      ctx.globalAlpha = 0.25;
-
-      for (var i = 0; i < totalSteps; i++) {
-        var curr = steps[i];
-        var next = steps[(i + 1) % totalSteps];
-        // tread
-        ctx.beginPath();
-        ctx.moveTo(curr.x, curr.y);
-        ctx.lineTo(next.x, next.y);
-        ctx.stroke();
-        // riser
-        var riserH = 6;
-        ctx.beginPath();
-        ctx.moveTo(curr.x, curr.y);
-        ctx.lineTo(curr.x, curr.y + riserH);
-        ctx.stroke();
-      }
-    }
-
-    // Interpolate position along the step path
-    function getPos(pos) {
-      while (pos < 0) pos += totalSteps;
-      pos = pos % totalSteps;
-      var idx = Math.floor(pos);
-      var frac = pos - idx;
-      var a = steps[idx % totalSteps];
-      var b = steps[(idx + 1) % totalSteps];
-      return { x: a.x + (b.x - a.x) * frac, y: a.y + (b.y - a.y) * frac };
-    }
-
-    function drawPenrose(ctx, time) {
-      ctx.clearRect(0, 0, S, S);
-      drawStairs(ctx);
-
-      var pos = (time * 0.5) % totalSteps;
-
-      // Trail
-      ctx.strokeStyle = col.fg;
-      ctx.lineWidth = 1.2;
-      var trailLen = 12;
-      for (var i = 1; i < trailLen; i++) {
-        var p0 = getPos(pos - (trailLen - i + 1) * 0.25);
-        var p1 = getPos(pos - (trailLen - i) * 0.25);
-        ctx.globalAlpha = 0.05 + 0.45 * (i / trailLen);
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
-      }
-
-      // Dot
-      var p = getPos(pos);
-      ctx.fillStyle = col.fg;
-      ctx.globalAlpha = 0.85;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.globalAlpha = 1;
-    }
-
-    function framePenrose() {
-      penroseT += 0.06;
-      drawPenrose(ctxP, penroseT);
-      requestAnimationFrame(framePenrose);
-    }
-    framePenrose();
   })();
   </script>
 </body>
