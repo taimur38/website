@@ -70,6 +70,7 @@ nav a {
   text-decoration: none;
   margin-left: 1.5rem;
 }
+nav a:visited { color: var(--muted); }
 nav a:hover { color: var(--fg); }
 
 /* ── Section label ──────────────────────────────────────── */
