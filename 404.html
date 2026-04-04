@@ -3,11 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flocking — Taimur Shah</title>
+  <title>404 — Taimur Shah</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .error {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .error-code {
+      font-family: var(--display);
+      font-size: 8rem;
+      font-weight: 600;
+      line-height: 1;
+      opacity: 0.12;
+    }
+    .error-message {
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+    }
+  </style>
 </head>
 <body>
 
@@ -19,6 +46,11 @@
       <a href="#" onclick="this.href='mailto:'+['taimur_shah','hks.harvard.edu'].join('@')">contact</a>
     </nav>
   </header>
+
+  <div class="error">
+    <div class="error-code">404</div>
+    <div class="error-message">Nothing here. <a href="/">Go home</a></div>
+  </div>
 
   <canvas id="c" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;"></canvas>
 
