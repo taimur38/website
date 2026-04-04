@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="On waves, gravel, and strange loops — why small actions make large movements.">
+  <meta name="description" content="On waves, gravel, and the small circles we trace — why individual actions make collective movements.">
   <title>Waves and Change — Taimur Shah</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,6 +19,7 @@
       color: var(--muted);
       letter-spacing: 0.04em;
       margin-bottom: 0.6rem;
+      text-align: center;
     }
     .post-title {
       font-family: var(--display);
@@ -26,12 +27,16 @@
       font-weight: 400;
       line-height: 1.3;
       margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .post-body {
+      max-width: 62ch;
+      margin: 0 auto;
     }
     .post-body p {
       font-size: 1rem;
       line-height: 1.75;
       margin-bottom: 1.3rem;
-      max-width: 62ch;
     }
     .post-body p:last-child { margin-bottom: 0; }
 
@@ -56,16 +61,10 @@
       margin: 2rem 0;
     }
     .particle-visual canvas {
-      width: 200px;
-      height: 200px;
+      width: 480px;
+      max-width: 100%;
+      height: 240px;
       display: block;
-    }
-    .visual-label {
-      font-family: var(--sans);
-      font-size: 0.72rem;
-      color: var(--muted);
-      margin-top: 0.6rem;
-      text-align: center;
     }
 
     footer { margin-top: 3rem; }
@@ -75,7 +74,7 @@
       .post-title { font-size: 1.5rem; }
       .hero-visual { margin: 0 -1rem 2rem; }
       .hero-visual canvas { height: 180px; }
-      .particle-visual canvas { width: 180px; height: 180px; }
+      .particle-visual canvas { height: 200px; }
     }
   </style>
 </head>
@@ -103,7 +102,6 @@
 
     <div class="particle-visual">
       <canvas id="particles-only"></canvas>
-      <div class="visual-label">the particles</div>
     </div>
 
     <div class="post-body">
@@ -216,10 +214,18 @@
 
     // ── Particles with amplitude-scaled orbits ──────────────
     (function () {
-      var ctx = site.initCanvas('particles-only', S).ctx;
-      var COLS = 10, ROWS = 8;
-      var BASE_AMP = 3;    // smallest orbit (at wave trough)
-      var MAX_AMP = 12;    // largest orbit (at wave peak)
+      var c = document.getElementById('particles-only');
+      var rect = c.getBoundingClientRect();
+      var PW = rect.width || 480;
+      var PH = rect.height || 240;
+      c.width = PW * dpr;
+      c.height = PH * dpr;
+      var ctx = c.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      var COLS = 16, ROWS = 8;
+      var BASE_AMP = 3;
+      var MAX_AMP = 12;
       var FREQ = 0.4;
       var SPEED = 0.025;
       var t = 0;
@@ -227,11 +233,10 @@
       var TRAIL_STEP_SIZE = 0.12;
 
       function particlePos(c, r, time) {
-        var sx = S / (COLS + 1), sy = S / (ROWS + 1);
+        var sx = PW / (COLS + 1), sy = PH / (ROWS + 1);
         var bx = (c + 1) * sx, by = (r + 1) * sy;
         var phase = c * FREQ + time;
-        // Amplitude varies by row: top rows (wave peaks) have larger orbits
-        var rowFrac = 1 - r / (ROWS - 1); // 1 at top, 0 at bottom
+        var rowFrac = 1 - r / (ROWS - 1);
         var amp = BASE_AMP + (MAX_AMP - BASE_AMP) * rowFrac;
         var offsetY = Math.sin(phase) * amp;
         var offsetX = Math.cos(phase) * amp * 0.3;
@@ -239,10 +244,9 @@
       }
 
       function draw() {
-        ctx.clearRect(0, 0, S, S);
+        ctx.clearRect(0, 0, PW, PH);
         for (var r = 0; r < ROWS; r++) {
           for (var c = 0; c < COLS; c++) {
-            // trail
             ctx.strokeStyle = col.fg;
             ctx.lineWidth = 1.2;
             for (var i = 1; i < TRAIL_STEPS; i++) {
@@ -256,7 +260,6 @@
               ctx.lineTo(curr.x, curr.y);
               ctx.stroke();
             }
-            // dot
             var p = particlePos(c, r, t);
             ctx.beginPath();
             ctx.fillStyle = col.fg;
