@@ -35,15 +35,6 @@
     }
     .post-body p:last-child { margin-bottom: 0; }
 
-    blockquote {
-      border-left: 2px solid var(--border);
-      padding-left: 1.2rem;
-      margin: 1.8rem 0;
-      font-style: italic;
-      color: var(--muted);
-    }
-    blockquote p { font-size: 0.95rem !important; }
-
     /* ── Hero wave canvas ───────────────────────────────────── */
     .hero-visual {
       margin: 0 -1.5rem 2.5rem;
@@ -75,19 +66,6 @@
       color: var(--muted);
       margin-top: 0.6rem;
       text-align: center;
-    }
-
-    /* ── Penrose visual ─────────────────────────────────────── */
-    .penrose-visual {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 2.5rem 0;
-    }
-    .penrose-visual canvas {
-      width: 200px;
-      height: 200px;
-      display: block;
     }
 
     footer { margin-top: 3rem; }
@@ -131,18 +109,10 @@
     <div class="post-body">
       <p>This is how change works, too. Everyone who has ever been part of something bigger — a movement, a shift, a slow turning of the world — has mostly just been bobbing. Doing their small thing. The wave is not any one person's contribution. It is what emerges when enough people dance in place at roughly the right time.</p>
 
-      <blockquote>
-        <p>Lant Pritchett once said something to a room full of education researchers that stuck with me. He told them: each of you thinks you are contributing a diamond to the pile — that yours is the piece of work that will finally tip the scales. But what each of you is really doing is adding a handful of gravel. And that's not a failure. That's how it works. The pile grows because enough people show up with their handful, and eventually the weight of all that gravel is what moves things.</p>
-      </blockquote>
+      <p>Lant Pritchett once said something to a room full of education researchers that stuck with me. He told them: each of you thinks you are contributing a diamond to the pile — that yours is the piece of work that will finally tip the scales. But what each of you is really doing is adding a handful of gravel. And that's not a failure. That's how it works. The pile grows because enough people show up with their handful, and eventually the weight of all that gravel is what moves things.</p>
 
       <p>There is a humility in this, and a strange comfort. You are not the wave. You are not even sure you're doing anything that matters. You are just going up and down. But the wave needs you — needs all of you — because without the medium, there is no wave at all. The force has nowhere to go.</p>
 
-      <p>I keep seeing this pattern. Douglas Hofstadter calls it a <em>strange loop</em>: you think you're in a hierarchy, moving up or down through levels, but if you follow the path far enough you arrive exactly where you started. Change is like that. The individual action feels small and circular. The collective result is directional and powerful. And there is no point at which one becomes the other — it's the same thing, seen from two distances.</p>
-    </div>
-
-    <div class="penrose-visual">
-      <canvas id="penrose"></canvas>
-      <div class="visual-label">strange loop</div>
     </div>
   </article>
 
@@ -302,92 +272,7 @@
       draw();
     })();
 
-    // ── Penrose stairs (strange loop) ───────────────────────
-    (function () {
-      var ctx = site.initCanvas('penrose', S).ctx;
-      var penroseT = 0;
-      var isoRx = 12, isoRy = 6;
-      var isoLx = -12, isoLy = 6;
-      var isoUp = -10;
-      var steps = [];
-      var N = 5;
-      var ox = S / 2, oy = S / 2 + 30;
 
-      for (var i = 0; i < N; i++) {
-        steps.push({ x: ox + isoRx * i, y: oy + isoRy * i + isoUp * i });
-      }
-      var c1x = ox + isoRx * N, c1y = oy + isoRy * N + isoUp * N;
-      for (var i = 0; i < N; i++) {
-        steps.push({ x: c1x + isoLx * i, y: c1y + isoLy * i + isoUp * i });
-      }
-      var c2x = c1x + isoLx * N, c2y = c1y + isoLy * N + isoUp * N;
-      for (var i = 0; i < N; i++) {
-        steps.push({ x: c2x - isoRx * i, y: c2y - isoRy * i + isoUp * i });
-      }
-      var c3x = c2x - isoRx * N, c3y = c2y - isoRy * N + isoUp * N;
-      for (var i = 0; i < N; i++) {
-        var frac = i / N;
-        steps.push({ x: c3x + (ox - c3x) * frac, y: c3y + (oy - c3y) * frac });
-      }
-
-      var totalSteps = steps.length;
-
-      function drawStairs() {
-        ctx.strokeStyle = col.fg;
-        ctx.lineWidth = 0.8;
-        ctx.globalAlpha = 0.25;
-        for (var i = 0; i < totalSteps; i++) {
-          var curr = steps[i];
-          var next = steps[(i + 1) % totalSteps];
-          ctx.beginPath();
-          ctx.moveTo(curr.x, curr.y);
-          ctx.lineTo(next.x, next.y);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(curr.x, curr.y);
-          ctx.lineTo(curr.x, curr.y + 6);
-          ctx.stroke();
-        }
-      }
-
-      function getPos(pos) {
-        while (pos < 0) pos += totalSteps;
-        pos = pos % totalSteps;
-        var idx = Math.floor(pos);
-        var frac = pos - idx;
-        var a = steps[idx % totalSteps];
-        var b = steps[(idx + 1) % totalSteps];
-        return { x: a.x + (b.x - a.x) * frac, y: a.y + (b.y - a.y) * frac };
-      }
-
-      function draw() {
-        ctx.clearRect(0, 0, S, S);
-        drawStairs();
-        var pos = (penroseT * 0.5) % totalSteps;
-        ctx.strokeStyle = col.fg;
-        ctx.lineWidth = 1.2;
-        var trailLen = 12;
-        for (var i = 1; i < trailLen; i++) {
-          var p0 = getPos(pos - (trailLen - i + 1) * 0.25);
-          var p1 = getPos(pos - (trailLen - i) * 0.25);
-          ctx.globalAlpha = 0.05 + 0.45 * (i / trailLen);
-          ctx.beginPath();
-          ctx.moveTo(p0.x, p0.y);
-          ctx.lineTo(p1.x, p1.y);
-          ctx.stroke();
-        }
-        var p = getPos(pos);
-        ctx.fillStyle = col.fg;
-        ctx.globalAlpha = 0.85;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        penroseT += 0.06;
-        requestAnimationFrame(draw);
-      }
-      draw();
-    })();
 
   })();
   </script>
