@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Writing by Taimur Shah.">
+  <title>Thoughts — Taimur Shah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .page-title {
+      font-family: var(--display);
+      font-size: 1.5rem;
+      font-weight: 400;
+      margin-bottom: 2.5rem;
+    }
+
+    .post-list {
+      list-style: none;
+    }
+    .post-list li {
+      padding: 1.1rem 0;
+      border-top: 1px solid var(--border);
+    }
+    .post-list li:last-child {
+      border-bottom: 1px solid var(--border);
+    }
+    .post-list a {
+      text-decoration: none;
+    }
+    .post-list a:hover .post-link-title {
+      text-decoration-color: var(--fg);
+    }
+    .post-link-title {
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: underline;
+      text-decoration-color: var(--border);
+      text-underline-offset: 3px;
+      transition: text-decoration-color 0.15s;
+    }
+    .post-link-date {
+      font-family: var(--sans);
+      font-size: 0.76rem;
+      color: var(--muted);
+      margin-left: 0.75rem;
+    }
+    .post-link-desc {
+      font-size: 0.88rem;
+      line-height: 1.6;
+      margin-top: 0.3rem;
+      color: var(--fg);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="site-name" style="text-decoration:none">Taimur Shah</a>
+    <nav>
+      <a href="/resume">work</a>
+      <a href="/visuals">visuals</a>
+      <a href="#" onclick="this.href='mailto:'+['taimur_shah','hks.harvard.edu'].join('@')">contact</a>
+    </nav>
+  </header>
+
+  <h1 class="page-title">Thoughts</h1>
+
+  <ul class="post-list">
+
+    <li>
+      <a href="/blog/waves-and-change/">
+        <span class="post-link-title">Waves and Change</span>
+        <span class="post-link-date">April 2026</span>
+        <p class="post-link-desc">On waves, gravel, and the small circles we trace. How individual actions make collective movements.</p>
+      </a>
+    </li>
+
+    <li>
+      <a href="/blog/ai-workflow/">
+        <span class="post-link-title">A Note on our AI Workflow Discussion</span>
+        <span class="post-link-date">March 2026</span>
+        <p class="post-link-desc">Reflections on organizing your work and your AI to get more out of working together — and guarding against atrophy.</p>
+      </a>
+    </li>
+
+    <li>
+      <a href="/blog/voice-augmented-applications/">
+        <span class="post-link-title">Voice Augmented Applications</span>
+        <span class="post-link-date">February 2018</span>
+        <p class="post-link-desc">Principles for multi-modal interfaces — lessons from building voice-augmented applications on the Watson team.</p>
+      </a>
+    </li>
+
+    <li>
+      <a href="/blog/prototyping-with-watson/">
+        <span class="post-link-title">Prototyping with Watson</span>
+        <span class="post-link-date">February 2018</span>
+        <p class="post-link-desc">Useful patterns for working with probabilistic systems — graph databases, Watson augmentation, and rapid prototyping.</p>
+      </a>
+    </li>
+
+  </ul>
+
+  <footer>taimur.sh</footer>
+
+</body>
+</html>
