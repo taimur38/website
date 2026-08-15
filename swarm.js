@@ -256,22 +256,10 @@ function initSwarm(canvas, opts = {}) {
     }
   }
 
-  function* neighbors(bi) {
-    const b = boids[bi];
-    const col = Math.min(Math.floor(b.x / CELL_SIZE), gridCols - 1);
-    const row = Math.min(Math.floor(b.y / CELL_SIZE), gridRows - 1);
-    for (let dr = -1; dr <= 1; dr++) {
-      for (let dc = -1; dc <= 1; dc++) {
-        const r = (row + dr + gridRows) % gridRows;
-        const c = (col + dc + gridCols) % gridCols;
-        const cell = grid[r * gridCols + c];
-        for (let k = 0; k < cell.length; k++) {
-          const j = cell[k];
-          if (j !== bi) yield j;
-        }
-      }
-    }
-  }
+  // Connection pair cache (populated in step(), consumed in buildBuffers())
+  const connMax = NUM_BOIDS * 10;
+  const connPairs = new Uint16Array(connMax * 2);
+  let connCount = 0;
 
   function wrapDelta(d, size) {
     if (d > size * 0.5) return d - size;
@@ -290,22 +278,42 @@ function initSwarm(canvas, opts = {}) {
   // ── Physics Step ───────────────────────────────────────────
   function step() {
     buildGrid();
+    connCount = 0;
     for (let i = 0; i < NUM_BOIDS; i++) {
       const b = boids[i];
       let sepX = 0, sepY = 0, sepCount = 0;
       let aliX = 0, aliY = 0, aliCount = 0;
       let cohX = 0, cohY = 0, cohCount = 0;
 
-      for (const j of neighbors(i)) {
-        const o = boids[j];
-        const dx = wrapDelta(o.x - b.x, W);
-        const dy = wrapDelta(o.y - b.y, H);
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 0.001) continue;
+      const col = Math.min(Math.floor(b.x / CELL_SIZE), gridCols - 1);
+      const row = Math.min(Math.floor(b.y / CELL_SIZE), gridRows - 1);
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = (row + dr + gridRows) % gridRows;
+          const c = (col + dc + gridCols) % gridCols;
+          const cell = grid[r * gridCols + c];
+          for (let k = 0; k < cell.length; k++) {
+            const j = cell[k];
+            if (j === i) continue;
+            const o = boids[j];
+            const dx = wrapDelta(o.x - b.x, W);
+            const dy = wrapDelta(o.y - b.y, H);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 0.001) continue;
 
-        if (dist < SEP_RADIUS) { sepX -= dx / dist; sepY -= dy / dist; sepCount++; }
-        if (dist < ALI_RADIUS) { aliX += o.vx; aliY += o.vy; aliCount++; }
-        if (dist < COH_RADIUS) { cohX += dx; cohY += dy; cohCount++; }
+            if (dist < SEP_RADIUS) { sepX -= dx / dist; sepY -= dy / dist; sepCount++; }
+            if (dist < ALI_RADIUS) { aliX += o.vx; aliY += o.vy; aliCount++; }
+            if (dist < COH_RADIUS) { cohX += dx; cohY += dy; cohCount++; }
+
+            // cache connection pair (store each pair once: j > i)
+            if (j > i && dist < CONN_RADIUS && connCount < connMax) {
+              const ci = connCount * 2;
+              connPairs[ci] = i;
+              connPairs[ci + 1] = j;
+              connCount++;
+            }
+          }
+        }
       }
 
       let ax = 0, ay = 0;
@@ -372,21 +380,19 @@ function initSwarm(canvas, opts = {}) {
 
     let li = 0;
 
-    // Connections
-    for (let i = 0; i < NUM_BOIDS; i++) {
-      const b = boids[i];
-      for (const j of neighbors(i)) {
-        if (j <= i) continue;
-        const o = boids[j];
-        const dx = wrapDelta(o.x - b.x, W);
-        const dy = wrapDelta(o.y - b.y, H);
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < CONN_RADIUS && dist > 0.001) {
-          if (li + 6 > MAX_LINE_VERTS * 3) break;
-          const alpha = 0.03 + (1 - dist / CONN_RADIUS) * 0.09;
-          lineData[li++] = b.x * dpr; lineData[li++] = b.y * dpr; lineData[li++] = alpha;
-          lineData[li++] = (b.x + dx) * dpr; lineData[li++] = (b.y + dy) * dpr; lineData[li++] = alpha;
-        }
+    // Connections (from cached pairs computed in step())
+    for (let c = 0; c < connCount; c++) {
+      const ci = c * 2;
+      const b = boids[connPairs[ci]];
+      const o = boids[connPairs[ci + 1]];
+      const dx = wrapDelta(o.x - b.x, W);
+      const dy = wrapDelta(o.y - b.y, H);
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < CONN_RADIUS && dist > 0.001) {
+        if (li + 6 > MAX_LINE_VERTS * 3) break;
+        const alpha = 0.03 + (1 - dist / CONN_RADIUS) * 0.09;
+        lineData[li++] = b.x * dpr; lineData[li++] = b.y * dpr; lineData[li++] = alpha;
+        lineData[li++] = (b.x + dx) * dpr; lineData[li++] = (b.y + dy) * dpr; lineData[li++] = alpha;
       }
     }
 
@@ -421,15 +427,23 @@ function initSwarm(canvas, opts = {}) {
   }
 
   // ── Render ─────────────────────────────────────────────────
+  // Pre-allocated scaled vertex template (updated on resize via dpr change)
+  const scaledVerts = new Float32Array(BOID_VERTS.length);
+  let lastDpr = 0;
+
+  function uploadScaledVerts() {
+    for (let i = 0; i < BOID_VERTS.length; i++) scaledVerts[i] = BOID_VERTS[i] * dpr;
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, scaledVerts);
+    lastDpr = dpr;
+  }
+
   function render() {
     if (destroyed) return;
     step();
     const numLineVerts = buildBuffers();
 
-    const scaledVerts = new Float32Array(BOID_VERTS.length);
-    for (let i = 0; i < BOID_VERTS.length; i++) scaledVerts[i] = BOID_VERTS[i] * dpr;
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuf);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 0, scaledVerts);
+    if (dpr !== lastDpr) uploadScaledVerts();
 
     const cw = canvas.width, ch = canvas.height;
 

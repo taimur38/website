@@ -1,0 +1,33 @@
+# Taimur Shah
+
+> Researcher and engineer working on economic growth in developing countries. Research
+> affiliation: Harvard Growth Lab (Kennedy School), focused on agriculture, cities and
+> political economy, using growth diagnostics and economic complexity. Also CTO of Beaj,
+> which delivers education over WhatsApp to underserved populations.
+
+Interactive research tools are deployed on subdomains of taimur.sh and listed under Projects.
+
+## Pages
+
+- [Home](https://taimur.sh/): Short bio and a statement of what the work is for — growth diagnostics as a method, policy and product as complementary routes to impact.
+- [Work](https://taimur.sh/work): Every project, taking the project rather than the employer as the unit. Filterable by organisation, subject and kind of work. Growth Lab, Beaj, World Bank, CERP Labs, IBM Watson, Clossit. This is the "work" link in site navigation.
+- [Resume](https://taimur.sh/resume): **The full CV** — the same career in chronological order by employer, with roles, dates, locations and education. Not in site navigation; reached from the "Chronological resume" link on the Work page. Also available as [PDF](https://taimur.sh/resume.pdf). Start here for employment history, dates or credentials.
+- [Visuals](https://taimur.sh/visuals): Canvas and WebGL sketches.
+
+## Projects
+
+- [Morocco Cities Interactive Report](https://morocco-cities.taimur.sh): Spatial-equilibrium reading of Morocco's cities, 2014–2024. Cities defined as labour markets (functional urban areas) rather than administrative units; covers migration, wages, employment composition and complexity. EN/FR.
+- [Global AEZ Yield Frontier](https://agri.taimur.sh): Country × agro-ecological zone typology from FAO GAEZ data. Benchmarks realised yields against a within-cluster frontier so comparisons hold thermal regime and moisture band fixed.
+- [Institutional Complexity](https://institutions.taimur.sh): Economic-complexity methods applied to V-Dem governance data. Places countries in an institutional space, shows nearest institutional peers and trajectories from 1975 to 2025.
+
+## Writing
+
+- [Waves and Change](https://taimur.sh/blog/waves-and-change/): On how change propagates — waves versus particles as a way of thinking about development and reform.
+
+## Optional
+
+- [GitHub](https://github.com/taimur38)
+- [Google Scholar](https://scholar.google.com/citations?user=x_YnjrUAAAAJ)
+- [LinkedIn](https://www.linkedin.com/in/taimur38)
+- [Harvard Growth Lab](https://growthlab.hks.harvard.edu/person/taimur-shah-0/)
+- [Beaj](https://www.beaj.org/)

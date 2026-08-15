@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Projects by Taimur Shah — growth diagnostics, education products, interactive research tools, and software built across the Growth Lab, CERP Labs, IBM Watson and Beaj.">
+  <title>Work — Taimur Shah</title>
+  <link rel="canonical" href="https://taimur.sh/work">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { max-width: 1000px; }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 1.4rem;
+    }
+    .page-title { font-family: var(--display); font-size: 1.35rem; }
+    .page-header .alt {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1px;
+      white-space: nowrap;
+    }
+    .page-header .alt:hover { color: var(--fg); border-bottom-color: var(--fg); }
+    .page-header .mid { margin-left: auto; }
+
+    /* ── View toggle ────────────────────────────────────────── */
+    .viewtabs { display: inline-flex; gap: 1rem; font-family: var(--sans); font-size: 0.78rem; }
+    .viewtabs button {
+      background: none;
+      border: none;
+      border-bottom: 1px solid transparent;
+      padding: 0 0 1px;
+      color: var(--muted);
+      cursor: pointer;
+      font: inherit;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .viewtabs button:hover { color: var(--fg); }
+    .viewtabs button[aria-pressed="true"] { color: var(--fg); border-bottom-color: var(--fg); }
+
+    /* ── Graph ──────────────────────────────────────────────── */
+    #graph-section[hidden] { display: none; }
+    #graph { width: 100%; display: block; overflow: visible; }
+    .g-hint {
+      font-family: var(--sans);
+      font-size: 0.74rem;
+      color: var(--muted);
+      margin-top: 0.9rem;
+    }
+    .g-edge { stroke: var(--border); stroke-width: 1; fill: none; transition: stroke 0.15s; }
+    .g-edge.lit { stroke: var(--accent); }
+    .g-node { cursor: pointer; }
+    .g-proj {
+      fill: var(--bg);
+      stroke: var(--muted);
+      stroke-width: 1;
+      transition: stroke 0.15s, fill 0.15s;
+    }
+    .g-proj.pinned { stroke: var(--accent); stroke-width: 2; }
+    .g-node.lit .g-proj { fill: var(--accent); stroke: var(--accent); }
+    .g-theme {
+      fill: var(--fg);
+      fill-opacity: 0.06;
+      stroke: var(--fg);
+      stroke-width: 1;
+      transition: fill-opacity 0.15s, stroke 0.15s;
+    }
+    .g-node.lit .g-theme { stroke: var(--accent); fill: var(--accent); fill-opacity: 0.14; }
+    .g-label {
+      font-family: var(--sans);
+      font-size: 11px;
+      fill: var(--muted);
+      pointer-events: none;
+      transition: fill 0.15s, opacity 0.15s;
+    }
+    .g-label.theme { font-size: 12px; fill: var(--fg); }
+    .g-label.proj { opacity: 0; }
+    /* Labels sit in their own layer above the nodes, so they are lit by class
+       from JS rather than by a sibling selector. */
+    .g-label.lit { opacity: 1; fill: var(--fg); }
+    .g-dim { opacity: 0.25; }
+
+    /* ── Filter row ─────────────────────────────────────────── */
+    .controls {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: nowrap;
+      gap: 1.4rem;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 0.7rem 0;
+      margin-bottom: 2.25rem;
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .controls select {
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      color: var(--fg);
+      background-color: var(--bg);
+      border: none;
+      border-bottom: 1px solid var(--border);
+      padding: 0.15rem 0.1rem;
+      cursor: pointer;
+      outline: none;
+      flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    /* Fixed widths, each sized to its longest option. A select sized to its
+       *selected* option changes width on every pick, which reflows the row. */
+    #f-org   { width: 11rem; }
+    #f-theme { width: 12rem; }
+    #f-type  { width: 9.5rem; }
+    #sort    { width: 9rem; }
+
+    .controls select:hover, .controls select:focus { border-bottom-color: var(--fg); }
+    .controls select.on { border-bottom-color: var(--accent); color: var(--accent); }
+
+    /* Native popups take their colours from the control, not the page. Without
+       these the dark-mode list renders white-on-light-grey. */
+    .controls select option { background-color: var(--bg); color: var(--fg); }
+    @media (prefers-color-scheme: dark) {
+      .controls select { color-scheme: dark; }
+      .controls select option { background-color: #1c1c1a; color: var(--fg); }
+    }
+
+    .controls .right { margin-left: auto; display: inline-flex; align-items: baseline; gap: 1rem; }
+    .count { font-family: var(--mono); font-size: 0.72rem; }
+    .clear {
+      background: none;
+      border: none;
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--border);
+      text-underline-offset: 3px;
+      padding: 0;
+    }
+    .clear:hover { color: var(--fg); }
+    .clear[hidden] { display: none; }
+
+    /* ── Sections ───────────────────────────────────────────── */
+    .section-head {
+      font-family: var(--sans);
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    #highlighted-section { margin-bottom: 2.75rem; }
+    #highlighted-section[hidden], #all-section[hidden] { display: none; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* ── Card ───────────────────────────────────────────────── */
+    .proj {
+      border: 1px solid var(--border);
+      padding: 1.05rem 1.15rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      transition: border-color 0.2s;
+    }
+    .proj:hover { border-color: var(--muted); }
+    .proj[hidden] { display: none; }
+    .proj.is-pinned { border-left: 2px solid var(--accent); }
+
+    .proj-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.75rem;
+    }
+    .proj-title {
+      font-family: var(--display);
+      font-size: 1.12rem;
+      line-height: 1.25;
+    }
+    .proj-year {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .proj-org {
+      font-family: var(--sans);
+      font-size: 0.74rem;
+      color: var(--muted);
+      margin-top: 0.22rem;
+    }
+    .proj-desc {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-top: 0.6rem;
+    }
+    .proj-desc.clamped {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .more {
+      align-self: flex-start;
+      background: none;
+      border: none;
+      padding: 0.25rem 0 0;
+      font-family: var(--sans);
+      font-size: 0.74rem;
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--border);
+      text-underline-offset: 3px;
+    }
+    .more:hover { color: var(--fg); }
+
+    .proj-foot {
+      margin-top: auto;
+      padding-top: 0.85rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.3rem 0.85rem;
+    }
+    .proj-links {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 0.85rem;
+    }
+    .proj-links a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); }
+    .proj-links a:hover { color: var(--fg); border-bottom-color: var(--fg); }
+    .proj-tags {
+      font-family: var(--sans);
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-left: auto;
+      text-align: right;
+      letter-spacing: 0.02em;
+    }
+
+    .empty {
+      font-family: var(--display);
+      color: var(--muted);
+      padding: 2.5rem 0;
+      text-align: center;
+    }
+    .empty[hidden] { display: none; }
+
+    /* One line is a desktop requirement; below 760px the row is allowed to wrap
+       rather than overflow the viewport. */
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; gap: 1.25rem; }
+      .controls { flex-wrap: wrap; gap: 0.6rem 1.1rem; }
+      .controls .right { margin-left: 0; width: 100%; }
+      #f-org, #f-theme, #f-type, #sort { width: auto; flex: 1 1 8rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .proj, .controls select { transition: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="site-name" style="text-decoration:none">Taimur Shah</a>
+    <nav>
+      <a href="/visuals">visuals</a>
+      <a href="#" onclick="this.href='mailto:'+['taimur_shah','hks.harvard.edu'].join('@')">contact</a>
+    </nav>
+  </header>
+
+  <div class="page-header">
+    <span class="page-title">Work</span>
+    <span class="mid viewtabs" role="group" aria-label="View">
+      <button type="button" id="view-cards" aria-pressed="true">Cards</button>
+      <button type="button" id="view-graph" aria-pressed="false">Graph</button>
+    </span>
+    <a class="alt" href="/resume">Resume ↗</a>
+  </div>
+
+  <!-- No visible labels: each select's default option names its own facet
+       ("All orgs"), which is what keeps the row to a single line at 1000px. -->
+  <div class="controls">
+    <select id="f-org" aria-label="Filter by organisation"></select>
+    <select id="f-theme" aria-label="Filter by theme"></select>
+    <select id="f-type" aria-label="Filter by type of work"></select>
+    <span class="right">
+      <select id="sort" aria-label="Sort order">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="org">By organisation</option>
+        <option value="title">By title</option>
+      </select>
+      <button class="clear" id="clear" hidden>Reset</button>
+      <span class="count" id="count" aria-live="polite"></span>
+    </span>
+  </div>
+
+  <!-- Starts hidden and empty: JS moves the data-featured cards in here. Without
+       JS the visitor gets one unsplit list rather than an empty heading. -->
+  <section id="highlighted-section" hidden>
+    <p class="section-head">Highlighted</p>
+    <div class="grid" id="highlighted"></div>
+  </section>
+
+  <section id="all-section">
+    <p class="section-head" id="all-head">All work</p>
+    <div class="grid" id="all">
+
+      <!--
+        Each card is one project. To add one, copy a block and set:
+          data-org      one of the org keys in LABELS below
+          data-theme    one or more theme keys, space separated
+          data-type     one or more type keys, space separated
+          data-year     numeric sort key (most recent year of involvement)
+          data-title    sort/dedupe key, independent of the displayed <h2>
+          data-featured present = pinned into the Highlighted section
+        Filtering and sorting are read off these attributes at runtime; the
+        markup below is the single source of truth. A new facet value needs a
+        matching entry in LABELS or its dropdown option renders as a raw key.
+      -->
+
+      <article class="proj" data-org="cerp" data-theme="education" data-type="product" data-year="2021" data-title="MISchool" data-featured>
+        <div class="proj-head">
+          <h2 class="proj-title">MISchool</h2>
+          <span class="proj-year">2019–21</span>
+        </div>
+        <p class="proj-org">CERP Labs · Punjab, Pakistan</p>
+        <p class="proj-desc">A school management application built for low-cost private schools in Pakistan — attendance, fees, results and parent communication for schools that had never run software before. I led product design and development, then designed the sales strategy and built the field sales team that carried it: door-to-door acquisition on a commission structure, with the analytics to see which districts and which reps were working. Rolled out to more than 700 schools and 80,000 students across six districts of Punjab.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Education · Product</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="cerp" data-theme="education health agriculture" data-type="org" data-year="2021" data-title="CERP Labs" data-featured>
+        <div class="proj-head">
+          <h2 class="proj-title">CERP Labs</h2>
+          <span class="proj-year">2018–21</span>
+        </div>
+        <p class="proj-org">Centre for Economic Research in Pakistan · Lahore</p>
+        <p class="proj-desc">Founded a revenue-generating software unit inside an economics research institution. Built financially sustainable model, organizational capacity and trained a first-in-class software development team. Collaborated with research teams, private sector partners and international development organizations across projects in education, healthcare and COVID-19 response.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Org building</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="agriculture climate" data-type="research" data-year="2024" data-title="Morocco Growth Diagnostic" data-featured>
+        <div class="proj-head">
+          <h2 class="proj-title">Morocco Growth Diagnostic</h2>
+          <span class="proj-year">2024</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab</p>
+        <p class="proj-desc">Co-authored a growth diagnostic of Morocco that asked what prevented Morocco from achieving a growth 'miracle', despite solid performance on economic fundamentals. My work focused on climate and agricultural shocks, alongside stalled structural transformation and the low and falling participation of women in the labour force.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Agriculture · Climate · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="cities" data-type="tool" data-year="2026" data-title="Morocco Cities Interactive Report" data-featured>
+        <div class="proj-head">
+          <h2 class="proj-title">Morocco Cities Interactive Report</h2>
+          <span class="proj-year">2026</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab</p>
+        <p class="proj-desc">A spatial-equilibrium reading of Morocco's cities, 2014–2024, published as an interactive report. We treat cities as labor markets, using functional urban areas estimated from satellite data from the GHSL rather than as administrative units. It tracks migration, wages, employment composition and economic complexity, and asks for each city whether growth is constrained more by labour demand or labour supply. Bilingual EN/FR.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://morocco-cities.taimur.sh" target="_blank" rel="noopener">Live ↗</a>
+            <a href="https://github.com/taimur38/morocco-cities-tool" target="_blank" rel="noopener">Source ↗</a>
+          </span>
+          <span class="proj-tags">Cities · Live tool</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="beaj" data-theme="education" data-type="product" data-year="2026" data-title="Beaj" data-featured>
+        <div class="proj-head">
+          <h2 class="proj-title">Beaj</h2>
+          <span class="proj-year">2023–</span>
+        </div>
+        <p class="proj-org">Chief Technology Officer · Cambridge, MA</p>
+        <p class="proj-desc">Beaj uses WhatsApp to teach underserved populations. I define and lead Beaj's technology strategy, harnessing modern architectures, AI services, and conversational interfaces to scale impact and advance the organization's mission.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://www.beaj.org/" target="_blank" rel="noopener">beaj.org ↗</a>
+          </span>
+          <span class="proj-tags">Education · Product</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="ibm" data-theme="ai" data-type="open-source" data-year="2018" data-title="Toombot" data-featured>
+        <div class="proj-head">
+          <h2 class="proj-title">Toombot</h2>
+          <span class="proj-year">2017–18</span>
+        </div>
+        <p class="proj-org">IBM Watson</p>
+        <p class="proj-desc">A bot that improves conversations. Authored and presented a thesis on using AI as an agent-in-the-middle — not answering the human, but enriching what two humans are already saying to each other — and built a conversational framework on Watson services to test the idea.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://github.com/taimur38/toombot" target="_blank" rel="noopener">Source ↗</a>
+          </span>
+          <span class="proj-tags">AI · Open source</span>
+        </div>
+      </article>
+
+      <!--
+        HIDDEN until public release — the Cities Diagnostic Tool is still under
+        construction. Uncomment to restore; it needs no other change.
+
+      <article class="proj" data-org="growth-lab" data-theme="cities" data-type="tool" data-year="2025" data-title="Cities Diagnostic Tool">
+        <div class="proj-head">
+          <h2 class="proj-title">Cities Diagnostic Tool</h2>
+          <span class="proj-year">2025</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab</p>
+        <p class="proj-desc">A place-by-place read of municipal economies in the United States, Mexico and Great Britain: how population and wages have moved, where each place sits within its metropolitan labour market, and which places most resemble it. Parquet loads directly in the browser, so the whole dashboard is a static build with no backend.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Cities · Live tool</span>
+        </div>
+      </article>
+      -->
+
+      <article class="proj" data-org="growth-lab" data-theme="institutions" data-type="research" data-year="2025" data-title="Morocco Labor Market Regulations">
+        <div class="proj-head">
+          <h2 class="proj-title">Labor Regulations, Exports and Female Inclusion</h2>
+          <span class="proj-year">2025</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab · with Zakaria Ouzif</p>
+        <p class="proj-desc">The Growth Lab's Morocco diagnostic identified three binding constraints — weak export performance, micro-level distortions concentrated in labor regulation, and the exclusion of women from the economy. This paper asks whether they are one, tracing the impacts of the minimum wage and employment protection law through to the other two.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Political Economy · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="climate industrial-policy" data-type="research" data-year="2024" data-title="Green Ammonia Capabilities and Workforce">
+        <div class="proj-head">
+          <h2 class="proj-title">Green Ammonia: Capabilities and Workforce</h2>
+          <span class="proj-year">2024</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab · with OCP Group and UM6P</p>
+        <p class="proj-desc">In this paper we analyzed the labor market constraints that would threaten Morocco's green hydrogen strategy. I used Employer-employee matched records to generate a network of labor flows between industries, and then used graph algorithms to flag critical industries that cannot scale quickly.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Climate · Industrial Policy · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="industrial-policy climate cities" data-type="research" data-year="2024" data-title="Green Growth Opportunities for Hermosillo">
+        <div class="proj-head">
+          <h2 class="proj-title">Green Growth Opportunities for Hermosillo</h2>
+          <span class="proj-year">2024</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab · Sonora, Mexico</p>
+        <p class="proj-desc">A companion to the Hermosillo diagnostic, asking what the city could supply to the global energy transition. Which activities in green value chains are within reach of what Hermosillo already knows how to do, and what industrial policies could be enacted to take advantage of the opportunities.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://growthlab.hks.harvard.edu/publication/green-growth-opportunities-for-hermosillo-supplying-the-global-energy-transition/" target="_blank" rel="noopener">Publication ↗</a>
+          </span>
+          <span class="proj-tags">Industrial Policy · Climate · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="cerp" data-theme="education" data-type="product" data-year="2021" data-title="IlmExchange">
+        <div class="proj-head">
+          <h2 class="proj-title">IlmExchange</h2>
+          <span class="proj-year">2020–21</span>
+        </div>
+        <p class="proj-org">CERP Labs · Pakistan</p>
+        <p class="proj-desc">An education platform addressing constraints on learning outcomes identified by the LEAPS research programme. Several components: a marketplace connecting low-cost private schools with education service providers, an emergency student learning portal built during COVID school closures, and a merge with MISchool's capabilities so the two could work together to mitigate learning losses.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Education · Product</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="cerp" data-theme="cities health" data-type="tool product" data-year="2020" data-title="Mapping Food Insecurity in Karachi">
+        <div class="proj-head">
+          <h2 class="proj-title">Mapping Food Insecurity in Karachi</h2>
+          <span class="proj-year">2020</span>
+        </div>
+        <p class="proj-org">CERP Labs for the World Bank</p>
+        <p class="proj-desc">Designed, led and won a competitive World Bank proposal to build an interactive dashboard mapping food-insecurity hotspots in Karachi's informal settlements. Produced rapidly for government officials in the wake of COVID-19 lockdowns, then generalised to support a wide range of indicators across multiple cities and survey sources.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Cities · Health · Live tool</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="cerp" data-theme="health" data-type="research tool" data-year="2020" data-title="Economic Vulnerability Assessment">
+        <div class="proj-head">
+          <h2 class="proj-title">Economic Vulnerability Assessment</h2>
+          <span class="proj-year">2020</span>
+        </div>
+        <p class="proj-org">CERP Labs · Punjab, Pakistan</p>
+        <p class="proj-desc">Conceived and led a public assessment quantifying the economic impact of COVID-19 and the lockdowns on households in Punjab. Brought principal investigators on board, secured the funding, and managed a multi-round survey on a random-digit-dial sample. Produced several publicly distributed reports and an interactive dashboard so the findings could be explored.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Health · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="cities climate agriculture" data-type="research" data-year="2024" data-title="Hermosillo Growth Diagnostic">
+        <div class="proj-head">
+          <h2 class="proj-title">Hermosillo Growth Diagnostic</h2>
+          <span class="proj-year">2024</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab · Sonora, Mexico</p>
+        <p class="proj-desc">Co-authored a subnational growth diagnostic of Hermosillo, focused on the role of water as a binding constraint to growth. The work integrated spatial equilibrium into subnational diagnostics — treating a city's constraints as partly a function of its position relative to other places, rather than as internal properties alone.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://growthlab.hks.harvard.edu/publication/growth-through-diversification-in-hermosillo/" target="_blank" rel="noopener">Publication ↗</a>
+            <a href="https://github.com/taimur38/hermosillo" target="_blank" rel="noopener">Analysis ↗</a>
+          </span>
+          <span class="proj-tags">Cities · Climate · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="climate industrial-policy" data-type="research" data-year="2024" data-title="UAE Carbon Capture Strategy">
+        <div class="proj-head">
+          <h2 class="proj-title">UAE Carbon Capture Strategy</h2>
+          <span class="proj-year">2024</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab</p>
+        <p class="proj-desc">Developed industrial policy strategy for the United Arab Emirates on carbon capture, utilisation and storage in support of green growth initiatives.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Climate · Industrial Policy · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="cities institutions" data-type="research tool" data-year="2024" data-title="Racial Inclusion in American Cities">
+        <div class="proj-head">
+          <h2 class="proj-title">Racial Inclusion in American Cities</h2>
+          <span class="proj-year">2023–24</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab</p>
+        <p class="proj-desc">Original research applying an economic complexity lens to racial inclusion at the industry level: which industries a city holds, and their particular racial compositions. This enables racial equity analysis for industrial policies. Used the research to analyse policies under consideration by the Mayor's office in Cleveland.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://growthlab.hks.harvard.edu/publication/teaching-case-spurring-inclusive-growth-in-cleveland-ohio/" target="_blank" rel="noopener">Teaching case ↗</a>
+          </span>
+          <span class="proj-tags">Cities · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="agriculture" data-type="tool" data-year="2026" data-title="Global AEZ Yield Frontier">
+        <div class="proj-head">
+          <h2 class="proj-title">Global AEZ Yield Frontier</h2>
+          <span class="proj-year">2026</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab</p>
+        <p class="proj-desc">Characterizing yield performance at the country × agro-ecological zone level, built on FAO GAEZ pixel data. Country-AEZs are clustered based on their AEZ characteristics and revealed crop-choice mixtures. Individual crop yields are then benchmarked against the best performer in the cluster, and then aggregated to generate a comparable yield ratio metric indicating distance from potential yield.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://agri.taimur.sh" target="_blank" rel="noopener">Live ↗</a>
+            <a href="https://github.com/taimur38/morocco-agri-typology" target="_blank" rel="noopener">Source ↗</a>
+          </span>
+          <span class="proj-tags">Agriculture · Live tool</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="institutions" data-type="research" data-year="2026" data-title="Political Economy Research Agenda">
+        <div class="proj-head">
+          <h2 class="proj-title">Institutions and Political Economy Research Agenda</h2>
+          <span class="proj-year">2026–</span>
+        </div>
+        <p class="proj-org">Growth Lab</p>
+        <p class="proj-desc">A research agenda on bringing political economy into growth diagnostics, theoretically grounded and as data-driven as possible. Political settlement analysis is the foundational model: it incorporates the other canonical models in political science, and works at time scales practical for applied work. I developed a tool that collects indicators on political settlements, state capacity and political institutions to operationalize the model, and matches countries to institutional peers by distance on V-Dem.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://institutions.taimur.sh" target="_blank" rel="noopener">Tool — under construction ↗</a>
+          </span>
+          <span class="proj-tags">Political Economy · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="world-bank" data-theme="agriculture climate" data-type="research" data-year="2025" data-title="Regenerative Agriculture in South Asia">
+        <div class="proj-head">
+          <h2 class="proj-title">Regenerative Agriculture in South Asia</h2>
+          <span class="proj-year">2025</span>
+        </div>
+        <p class="proj-org">World Bank · Short-Term Consultant</p>
+        <p class="proj-desc">Research on regenerative agriculture across South Asia — what the practices are, where the evidence on yields and soil outcomes actually holds, and what constrains wider adoption by farmers.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Agriculture · Climate · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="world-bank" data-theme="climate" data-type="research" data-year="2025" data-title="Trade Model with Climate Scenarios">
+        <div class="proj-head">
+          <h2 class="proj-title">Trade Model with Climate Scenarios</h2>
+          <span class="proj-year">2025</span>
+        </div>
+        <p class="proj-org">World Bank · Short-Term Consultant</p>
+        <p class="proj-desc">Optimising a global trade model incorporating climate policy scenarios — border adjustments, carbon pricing and their propagation through trade patterns, with the computational work of making a model of that size solve in usable time.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Climate · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="aspire" data-theme="industrial-policy" data-type="research" data-year="2022" data-title="Kazakhstan Industrial Policy">
+        <div class="proj-head">
+          <h2 class="proj-title">Kazakhstan Industrial Policy</h2>
+          <span class="proj-year">2022</span>
+        </div>
+        <p class="proj-org">Agency for Strategic Planning and Reforms · Astana</p>
+        <p class="proj-desc">Economic advisor to ASPIRE, focused on industrial policy. Analysed the existing structure of state support for industry in Kazakhstan and asked which market failures each instrument was supposed to address — finding, in several cases, none that were identified. Proposed both changes to specific policies and a better institutional process for formulating new ones.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Industrial Policy · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="hks" data-theme="agriculture" data-type="research" data-year="2022" data-title="Pakistan Agricultural Productivity">
+        <div class="proj-head">
+          <h2 class="proj-title">Pakistan Agricultural Productivity</h2>
+          <span class="proj-year">2022</span>
+        </div>
+        <p class="proj-org">Harvard Kennedy School · Second Year Policy Analysis</p>
+        <p class="proj-desc">A diagnostic of agricultural productivity in Pakistan, focusing on yield growth. The research identified poor yield performance as a central issue in Pakistani agriculture, and then develops two informative case studies - cotton, declining, and corn, on the rise - to tease out common underlying factors. It identifies seed quality as the main issue. The report then asks what market failures have prevented the private sector from improving seed quality separately, and concludes by recommending public seed quality competitions held by the government to resolve information failures.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://github.com/taimur38/SYPA" target="_blank" rel="noopener">Analysis ↗</a>
+          </span>
+          <span class="proj-tags">Agriculture · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="ibm" data-theme="ai" data-type="product open-source" data-year="2017" data-title="CogEnv">
+        <div class="proj-head">
+          <h2 class="proj-title">CogEnv</h2>
+          <span class="proj-year">2015–17</span>
+        </div>
+        <p class="proj-org">IBM Watson · Cognitive Environments</p>
+        <p class="proj-desc">Architected and led development of the core software library and a set of agents managing distributed, multimodal input and output enriched by Watson services — speech, gesture, displays and sensors across a physical room treated as one addressable surface. The library let downstream developers write plugins and applications for cognitive environments.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">AI · Product</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="ibm" data-theme="ai institutions" data-type="product" data-year="2016" data-title="Election Explorer">
+        <div class="proj-head">
+          <h2 class="proj-title">Election Explorer</h2>
+          <span class="proj-year">2016</span>
+        </div>
+        <p class="proj-org">IBM Watson</p>
+        <p class="proj-desc">Led development of a product covering political contributions, news, legislative activity and lobbyist records, exposed through a custom question-and-answer interface and APIs. Architected the frontend so a large team could work on it simultaneously without collisions, and designed the interactive graph visualisation that made traversing the underlying knowledge graph intuitive and powerful.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">AI · Product · Political Economy</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="ibm" data-theme="ai" data-type="open-source" data-year="2018" data-title="Toomba">
+        <div class="proj-head">
+          <h2 class="proj-title">Toomba</h2>
+          <span class="proj-year">2017–18</span>
+        </div>
+        <p class="proj-org">IBM Watson</p>
+        <p class="proj-desc">Designed, pitched and led development of a system generating knowledge graphs from unstructured natural language using several independent Watson services. Backend-agnostic by design — I wrote plugins for Neo4J, SQL, Gremlin and Redis — and led a team building question-answer services on top of it against both Neo4J and Postgres.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://github.com/taimur38/toomba" target="_blank" rel="noopener">Source ↗</a>
+          </span>
+          <span class="proj-tags">AI · Open source</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="personal" data-theme="ai" data-type="open-source" data-year="2018" data-title="Discourse">
+        <div class="proj-head">
+          <h2 class="proj-title">Discourse</h2>
+          <span class="proj-year">2018</span>
+        </div>
+        <p class="proj-org">Independent · Elixir</p>
+        <p class="proj-desc">An attempt to link conversations with data — carrying the agent-in-the-middle idea from Toombot toward grounding what people say in the records that would confirm or contradict it.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://github.com/taimur38/discourse" target="_blank" rel="noopener">Source ↗</a>
+          </span>
+          <span class="proj-tags">AI · Open source</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="ibm" data-theme="graphics" data-type="open-source" data-year="2017" data-title="Kinect and Projection Mapping">
+        <div class="proj-head">
+          <h2 class="proj-title">Kinect &amp; Projection Mapping</h2>
+          <span class="proj-year">2016–17</span>
+        </div>
+        <p class="proj-org">IBM Watson and independent · C++ / C#</p>
+        <p class="proj-desc">A cluster of graphics experiments behind the cognitive environments work: broadcasting Kinect depth streams over websockets, using the viewer's head position as the camera so a flat display reads as a window, and projection mapping onto physical surfaces. Mostly OpenGL and openFrameworks.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://github.com/taimur38/KinectServer" target="_blank" rel="noopener">KinectServer ↗</a>
+            <a href="https://github.com/taimur38/kinect-project" target="_blank" rel="noopener">kinect-project ↗</a>
+            <a href="https://github.com/taimur38/VRCam" target="_blank" rel="noopener">VRCam ↗</a>
+          </span>
+          <span class="proj-tags">Graphics · Open source</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="personal" data-theme="consumer" data-type="open-source" data-year="2018" data-title="Gamechat">
+        <div class="proj-head">
+          <h2 class="proj-title">Gamechat</h2>
+          <span class="proj-year">2018</span>
+        </div>
+        <p class="proj-org">Independent</p>
+        <p class="proj-desc">Video chat and multiplayer gaming in the browser, in one page.</p>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://github.com/taimur38/gamechat" target="_blank" rel="noopener">Source ↗</a>
+          </span>
+          <span class="proj-tags">Consumer · Open source</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="parrable" data-theme="consumer" data-type="product" data-year="2014" data-title="Parrable">
+        <div class="proj-head">
+          <h2 class="proj-title">Parrable</h2>
+          <span class="proj-year">2013–14</span>
+        </div>
+        <p class="proj-org">VP of Engineering · New York</p>
+        <p class="proj-desc">Led data analysis and advertising operations for several clients, and assisted in fundraising and business development. Converted the Clossit backend and infrastructure to support the pivot from a destination site to advertising, and built customised products on top of it for clients.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Consumer · Product</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="clossit" data-theme="consumer" data-type="product" data-year="2013" data-title="Clossit">
+        <div class="proj-head">
+          <h2 class="proj-title">Clossit</h2>
+          <span class="proj-year">2011–13</span>
+        </div>
+        <p class="proj-org">Founder · New York</p>
+        <p class="proj-desc">A consumer site where people browsed a large database of clothes and curated personal collections shared with followers, designed to reflect the social nature of fashion. The system learned preferences from interactions and recommended accordingly. I built android and iOS applications, and led the sale of the company to Parrable in 2013.</p>
+        <div class="proj-foot">
+          <span class="proj-tags">Consumer · Product</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Graph view. Nodes are projects and themes; a project links to each theme
+       it carries, so themes act as the hubs that connect work across orgs and
+       decades. Built from the same cards, so the filters above apply here too. -->
+  <section id="graph-section" hidden>
+    <p class="section-head">Projects by theme</p>
+    <svg id="graph" role="img" aria-label="Graph of projects linked to the themes they share"></svg>
+    <p class="g-hint">Hover a node to trace what it connects to. Click a theme to filter by it.</p>
+  </section>
+
+  <p class="empty" id="empty" hidden>No projects match those filters.</p>
+
+  <footer>taimur.sh</footer>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var LABELS = {
+      org: {
+        'growth-lab': 'Growth Lab', 'beaj': 'Beaj', 'world-bank': 'World Bank',
+        'cerp': 'CERP Labs', 'ibm': 'IBM Watson', 'aspire': 'ASPIRE Kazakhstan',
+        'hks': 'HKS', 'parrable': 'Parrable', 'clossit': 'Clossit', 'personal': 'Independent'
+      },
+      theme: {
+        'education': 'Education', 'agriculture': 'Agriculture', 'cities': 'Cities & Space',
+        'climate': 'Climate & Energy', 'industrial-policy': 'Industrial Policy',
+        'health': 'Health', 'institutions': 'Political Economy', 'ai': 'AI & Knowledge Graphs',
+        'graphics': 'Graphics', 'consumer': 'Consumer Web'
+      },
+      type: {
+        'research': 'Research', 'tool': 'Live tool', 'product': 'Product',
+        'open-source': 'Open source', 'org': 'Org building'
+      }
+    };
+    var FACETS = ['org', 'theme', 'type'];
+    // Doubles as the facet's visible name, since the selects carry no label.
+    var ALL = { org: 'All orgs', theme: 'All themes', type: 'All types' };
+    var EASE = 'cubic-bezier(0.22, 0.61, 0.36, 1)';
+
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var highlighted = document.getElementById('highlighted');
+    var all = document.getElementById('all');
+    var hiSection = document.getElementById('highlighted-section');
+    var allSection = document.getElementById('all-section');
+    var allHead = document.getElementById('all-head');
+    var emptyMsg = document.getElementById('empty');
+    var countEl = document.getElementById('count');
+    var clearBtn = document.getElementById('clear');
+    var sortEl = document.getElementById('sort');
+
+    var cards = Array.prototype.slice.call(all.querySelectorAll('.proj'));
+
+    cards.forEach(function (c) {
+      c._f = {};
+      FACETS.forEach(function (f) {
+        c._f[f] = (c.dataset[f] || '').split(/\s+/).filter(Boolean);
+      });
+      c._year = parseInt(c.dataset.year, 10) || 0;
+      c._title = c.dataset.title || '';
+      c._pinned = c.hasAttribute('data-featured');
+      if (c._pinned) c.classList.add('is-pinned');
+    });
+
+    // One selected value per facet; '' means no filter on that facet.
+    var active = { org: '', theme: '', type: '' };
+
+    function matches(card, ignore) {
+      for (var i = 0; i < FACETS.length; i++) {
+        var f = FACETS[i];
+        if (f === ignore || !active[f]) continue;
+        if (card._f[f].indexOf(active[f]) === -1) return false;
+      }
+      return true;
+    }
+
+    // ── Dropdowns ─────────────────────────────────────────────
+    var selects = {};
+    FACETS.forEach(function (facet) {
+      // Ordered by total project count, biggest first. Deliberately the
+      // *unfiltered* count, so options keep a stable position instead of
+      // reshuffling under the cursor every time a filter changes.
+      var total = {};
+      cards.forEach(function (c) {
+        c._f[facet].forEach(function (v) { total[v] = (total[v] || 0) + 1; });
+      });
+      var keys = Object.keys(LABELS[facet]).filter(function (k) {
+        return total[k];
+      }).sort(function (a, b) {
+        return total[b] - total[a] || LABELS[facet][a].localeCompare(LABELS[facet][b]);
+      });
+
+      var sel = document.getElementById('f-' + facet);
+      var opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = ALL[facet];
+      sel.appendChild(opt);
+      keys.forEach(function (k) {
+        var o = document.createElement('option');
+        o.value = k;
+        sel.appendChild(o);
+      });
+      sel.addEventListener('change', function () {
+        active[facet] = sel.value;
+        apply();
+        writeUrl();
+      });
+      selects[facet] = sel;
+    });
+
+    // Option labels carry the count they would yield, computed against the
+    // other facets only — so the number is what you get if you pick it.
+    function refreshOptionCounts() {
+      FACETS.forEach(function (facet) {
+        var sel = selects[facet];
+        for (var i = 0; i < sel.options.length; i++) {
+          var o = sel.options[i];
+          var n = cards.filter(function (c) {
+            return (o.value === '' || c._f[facet].indexOf(o.value) !== -1) && matches(c, facet);
+          }).length;
+          o.textContent = (o.value === '' ? ALL[facet] : LABELS[facet][o.value]) + ' (' + n + ')';
+          o.disabled = n === 0 && o.value !== active[facet];
+        }
+        sel.classList.toggle('on', active[facet] !== '');
+      });
+    }
+
+    // ── Sorting ───────────────────────────────────────────────
+    function sorted(list) {
+      var key = sortEl.value;
+      return list.slice().sort(function (a, b) {
+        if (key === 'oldest') return a._year - b._year || a._title.localeCompare(b._title);
+        if (key === 'title') return a._title.localeCompare(b._title);
+        if (key === 'org') {
+          var ao = LABELS.org[a._f.org[0]] || '', bo = LABELS.org[b._f.org[0]] || '';
+          return ao.localeCompare(bo) || b._year - a._year;
+        }
+        return b._year - a._year || a._title.localeCompare(b._title);
+      });
+    }
+
+    // ── FLIP ──────────────────────────────────────────────────
+    // The first pass moves the featured cards out of the authored list and
+    // sorts the rest, so animating it would show the page rearranging on load.
+    var firstPass = true;
+
+    function reflow(mutate) {
+      if (reduceMotion || firstPass) { mutate(); return; }
+
+      var before = new Map();
+      cards.forEach(function (c) {
+        if (!c.hidden) before.set(c, c.getBoundingClientRect());
+      });
+
+      mutate();
+
+      var order = 0;
+      cards.forEach(function (c) {
+        if (c.hidden) return;
+        var last = c.getBoundingClientRect();
+        var first = before.get(c);
+
+        if (!first) {
+          c.animate(
+            [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+            { duration: 300, delay: Math.min(order, 8) * 18, easing: EASE, fill: 'backwards' }
+          );
+          order++;
+          return;
+        }
+
+        var dx = first.left - last.left;
+        var dy = first.top - last.top;
+        if (!dx && !dy) return;
+        c.animate(
+          [{ transform: 'translate(' + dx + 'px, ' + dy + 'px)' }, { transform: 'none' }],
+          { duration: 380, easing: EASE }
+        );
+      });
+    }
+
+    // ── Apply ─────────────────────────────────────────────────
+    function apply() {
+      var anyFilter = FACETS.some(function (f) { return active[f] !== ''; });
+      var reordered = sortEl.value !== 'newest';
+      // Pinning only holds in the default view. Once the visitor filters or
+      // sorts, the highlighted set merges in so the order they asked for holds.
+      var splitPinned = !anyFilter && !reordered;
+
+      var visible = cards.filter(function (c) { return matches(c, null); });
+      var ordered = sorted(visible);
+      var graphing = view === 'graph';
+
+      if (graphing) {
+        hiSection.hidden = true;
+        allSection.hidden = true;
+        gSection.hidden = ordered.length === 0;
+        emptyMsg.hidden = ordered.length !== 0;
+        lastW = svg.clientWidth;
+        if (ordered.length) buildGraph(visible);
+      } else {
+        gSection.hidden = true;
+        reflow(function () {
+          cards.forEach(function (c) { c.hidden = visible.indexOf(c) === -1; });
+
+          if (splitPinned) {
+            ordered.filter(function (c) { return c._pinned; })
+              .forEach(function (c) { highlighted.appendChild(c); });
+            ordered.filter(function (c) { return !c._pinned; })
+              .forEach(function (c) { all.appendChild(c); });
+          } else {
+            ordered.forEach(function (c) { all.appendChild(c); });
+          }
+
+          hiSection.hidden = !splitPinned;
+          allHead.textContent = splitPinned ? 'Everything else' : 'All work';
+          allSection.hidden = ordered.length === 0;
+          emptyMsg.hidden = ordered.length !== 0;
+        });
+      }
+
+      countEl.textContent = ordered.length === cards.length
+        ? cards.length + ' projects'
+        : ordered.length + ' of ' + cards.length;
+      clearBtn.hidden = !anyFilter && !reordered;
+      refreshOptionCounts();
+    }
+
+    // ── Graph view ────────────────────────────────────────────
+    // A small force layout: every pair repels, edges pull, everything drifts
+    // toward the centre. ~40 nodes, so the O(n²) pass is free.
+    var svg = document.getElementById('graph');
+    var gSection = document.getElementById('graph-section');
+    var SVGNS = 'http://www.w3.org/2000/svg';
+    // Tuned by sweeping against the real card set: fills ~82% x / 89% y of the
+    // canvas with no node overlaps. GRAV_Y pulls harder vertically because the
+    // canvas is wide, which otherwise leaves a tall blob in the middle.
+    var GH = 560, REST = 130, K_SPRING = 0.018, GRAV = 0.0045, GRAV_Y = 1.9, DAMP = 0.82;
+    var REP_THEME = 3800, REP_PROJ = 1500;
+    var gNodes = [], gEdges = [], gRaf = null;
+
+    function el(tag, attrs, cls) {
+      var e = document.createElementNS(SVGNS, tag);
+      for (var k in attrs) e.setAttribute(k, attrs[k]);
+      if (cls) e.setAttribute('class', cls);
+      return e;
+    }
+
+    function buildGraph(visible) {
+      if (gRaf) { cancelAnimationFrame(gRaf); gRaf = null; }
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      gNodes = [];
+      gEdges = [];
+
+      var w = svg.clientWidth || 900;
+      svg.setAttribute('viewBox', '0 0 ' + w + ' ' + GH);
+      svg.setAttribute('height', GH);
+      var cx = w / 2, cy = GH / 2;
+
+      var themeOf = {};
+      visible.forEach(function (c) {
+        c._f.theme.forEach(function (t) { (themeOf[t] = themeOf[t] || []).push(c); });
+      });
+
+      // Deterministic seeding on a golden-angle spiral: same layout every load,
+      // and no two nodes start on top of each other.
+      function seed(i) {
+        var a = i * 2.399963, r = Math.sqrt(i + 1) * 26;
+        return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+      }
+
+      var byKey = {}, idx = 0;
+      Object.keys(themeOf).forEach(function (t) {
+        var n = seed(idx++);
+        n.kind = 'theme'; n.key = t; n.label = LABELS.theme[t];
+        n.r = 9 + Math.sqrt(themeOf[t].length) * 5;
+        n.rep = REP_THEME; n.vx = 0; n.vy = 0;
+        byKey['t:' + t] = n;
+        gNodes.push(n);
+      });
+      visible.forEach(function (c) {
+        var n = seed(idx++);
+        n.kind = 'proj'; n.card = c; n.label = c._title;
+        n.r = c._pinned ? 6 : 4.5;
+        n.rep = REP_PROJ; n.vx = 0; n.vy = 0;
+        gNodes.push(n);
+        c._f.theme.forEach(function (t) {
+          if (byKey['t:' + t]) gEdges.push({ a: byKey['t:' + t], b: n });
+        });
+      });
+
+      var edgeLayer = el('g'), nodeLayer = el('g'), labelLayer = el('g');
+      svg.appendChild(edgeLayer);
+      svg.appendChild(nodeLayer);
+      svg.appendChild(labelLayer);
+
+      gEdges.forEach(function (e) {
+        e.el = el('line', {}, 'g-edge');
+        edgeLayer.appendChild(e.el);
+      });
+
+      gNodes.forEach(function (n) {
+        var g = el('g', { tabindex: '0' }, 'g-node');
+        var shape = el('circle', { r: n.r },
+          n.kind === 'theme' ? 'g-theme' : 'g-proj' + (n.card._pinned ? ' pinned' : ''));
+        g.appendChild(shape);
+        var t = el('text', { 'dy': '0.32em' },
+          'g-label ' + (n.kind === 'theme' ? 'theme' : 'proj'));
+        t.textContent = n.label;
+        n.g = g; n.text = t;
+        nodeLayer.appendChild(g);
+        labelLayer.appendChild(t);
+
+        g.addEventListener('mouseenter', function () { lite(n); });
+        g.addEventListener('mouseleave', function () { lite(null); });
+        g.addEventListener('focus', function () { lite(n); });
+        g.addEventListener('blur', function () { lite(null); });
+        if (n.kind === 'theme') {
+          g.addEventListener('click', function () {
+            active.theme = active.theme === n.key ? '' : n.key;
+            selects.theme.value = active.theme;
+            apply();
+            writeUrl();
+          });
+          g.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); g.click(); }
+          });
+        }
+      });
+
+      var alpha = 1;
+      function frame() {
+        for (var s = 0; s < 2; s++) tickForces(w);
+        draw();
+        alpha *= 0.965;
+        if (alpha > 0.02) gRaf = requestAnimationFrame(frame);
+        else gRaf = null;
+      }
+      if (reduceMotion) {
+        for (var i = 0; i < 260; i++) tickForces(w);
+        draw();
+      } else {
+        frame();
+      }
+    }
+
+    function tickForces(w) {
+      var i, j, n = gNodes.length, a, b, dx, dy, d2, d, f;
+      for (i = 0; i < n; i++) {
+        for (j = i + 1; j < n; j++) {
+          a = gNodes[i]; b = gNodes[j];
+          dx = b.x - a.x; dy = b.y - a.y;
+          d2 = dx * dx + dy * dy || 0.01;
+          d = Math.sqrt(d2);
+          f = (a.rep + b.rep) / d2;
+          dx = dx / d * f; dy = dy / d * f;
+          a.vx -= dx; a.vy -= dy; b.vx += dx; b.vy += dy;
+        }
+      }
+      gEdges.forEach(function (e) {
+        var dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
+        var d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+        var f = (d - REST) * K_SPRING;
+        dx = dx / d * f; dy = dy / d * f;
+        e.a.vx += dx; e.a.vy += dy; e.b.vx -= dx; e.b.vy -= dy;
+      });
+      var cx = w / 2, cy = GH / 2;
+      gNodes.forEach(function (nd) {
+        nd.vx += (cx - nd.x) * GRAV;
+        nd.vy += (cy - nd.y) * GRAV * GRAV_Y;
+        nd.x += nd.vx; nd.y += nd.vy;
+        nd.vx *= DAMP; nd.vy *= DAMP;
+        var pad = nd.r + 4;
+        nd.x = Math.max(pad, Math.min(w - pad, nd.x));
+        nd.y = Math.max(pad, Math.min(GH - pad, nd.y));
+      });
+    }
+
+    function draw() {
+      gEdges.forEach(function (e) {
+        e.el.setAttribute('x1', e.a.x); e.el.setAttribute('y1', e.a.y);
+        e.el.setAttribute('x2', e.b.x); e.el.setAttribute('y2', e.b.y);
+      });
+      gNodes.forEach(function (n) {
+        n.g.setAttribute('transform', 'translate(' + n.x + ',' + n.y + ')');
+        n.text.setAttribute('x', n.x + n.r + 5);
+        n.text.setAttribute('y', n.y);
+      });
+    }
+
+    function lite(node) {
+      var near = null;
+      if (node) {
+        near = new Set([node]);
+        gEdges.forEach(function (e) {
+          if (e.a === node) near.add(e.b);
+          if (e.b === node) near.add(e.a);
+        });
+      }
+      gNodes.forEach(function (n) {
+        var on = !node || near.has(n);
+        n.g.classList.toggle('lit', !!node && near.has(n));
+        n.g.classList.toggle('g-dim', !!node && !near.has(n));
+        n.text.classList.toggle('lit', !!node && near.has(n));
+        n.text.classList.toggle('g-dim', !!node && !on);
+      });
+      gEdges.forEach(function (e) {
+        var on = node && (e.a === node || e.b === node);
+        e.el.classList.toggle('lit', !!on);
+        e.el.classList.toggle('g-dim', !!node && !on);
+      });
+    }
+
+    // ── View switching ────────────────────────────────────────
+    var view = 'cards';
+    var tabCards = document.getElementById('view-cards');
+    var tabGraph = document.getElementById('view-graph');
+
+    function setView(v, skipApply) {
+      view = v;
+      tabCards.setAttribute('aria-pressed', v === 'cards' ? 'true' : 'false');
+      tabGraph.setAttribute('aria-pressed', v === 'graph' ? 'true' : 'false');
+      if (!skipApply) { apply(); writeUrl(); }
+    }
+    tabCards.addEventListener('click', function () { setView('cards'); });
+    tabGraph.addEventListener('click', function () { setView('graph'); });
+
+    var resizeTimer, lastW = 0;
+    window.addEventListener('resize', function () {
+      if (view !== 'graph') return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function () {
+        if (Math.abs(svg.clientWidth - lastW) < 24) return;
+        lastW = svg.clientWidth;
+        buildGraph(cards.filter(function (c) { return matches(c, null); }));
+      }, 200);
+    });
+
+    // ── URL state ─────────────────────────────────────────────
+    function writeUrl() {
+      var p = new URLSearchParams();
+      FACETS.forEach(function (f) { if (active[f]) p.set(f, active[f]); });
+      if (sortEl.value !== 'newest') p.set('sort', sortEl.value);
+      if (view !== 'cards') p.set('view', view);
+      var s = p.toString();
+      history.replaceState(null, '', s ? '?' + s : location.pathname);
+    }
+
+    function readUrl() {
+      var p = new URLSearchParams(location.search);
+      FACETS.forEach(function (f) {
+        var v = p.get(f);
+        if (v && LABELS[f][v]) { active[f] = v; selects[f].value = v; }
+      });
+      if (p.get('sort')) sortEl.value = p.get('sort');
+      if (p.get('view') === 'graph') setView('graph', true);
+    }
+
+    sortEl.addEventListener('change', function () { apply(); writeUrl(); });
+
+    clearBtn.addEventListener('click', function () {
+      FACETS.forEach(function (f) { active[f] = ''; selects[f].value = ''; });
+      sortEl.value = 'newest';
+      apply();
+      writeUrl();
+    });
+
+    // ── Description clamping ──────────────────────────────────
+    cards.forEach(function (c) {
+      var d = c.querySelector('.proj-desc');
+      d.classList.add('clamped');
+      if (d.scrollHeight - d.clientHeight < 4) { d.classList.remove('clamped'); return; }
+      var btn = document.createElement('button');
+      btn.className = 'more';
+      btn.type = 'button';
+      btn.textContent = 'More';
+      btn.setAttribute('aria-expanded', 'false');
+      btn.addEventListener('click', function () {
+        var open = d.classList.toggle('clamped') === false;
+        btn.textContent = open ? 'Less' : 'More';
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      d.insertAdjacentElement('afterend', btn);
+    });
+
+    readUrl();
+    apply();
+    firstPass = false;
+  })();
+  </script>
+
+</body>
+</html>

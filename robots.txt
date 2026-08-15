@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /README.md
+
+Sitemap: https://taimur.sh/sitemap.xml
+
+# Content map for LLM retrieval: https://taimur.sh/llms.txt
+# Resume: https://taimur.sh/resume (HTML) · https://taimur.sh/resume.pdf (PDF)

@@ -16,9 +16,53 @@ var site = (function () {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
   }
 
+  /* ── Visibility-based animation gating ─────────────────── */
+  var _visMap = new Map();
+  var _restartMap = new Map();
+
+  var _observer = new IntersectionObserver(function (entries) {
+    for (var i = 0; i < entries.length; i++) {
+      var entry = entries[i];
+      var el = entry.target;
+      var wasVisible = _visMap.get(el);
+      _visMap.set(el, entry.isIntersecting);
+      if (entry.isIntersecting && !wasVisible) {
+        var cb = _restartMap.get(el);
+        if (cb) {
+          _restartMap.delete(el);
+          requestAnimationFrame(cb);
+        }
+      }
+    }
+  }, { threshold: 0.01 });
+
+  /**
+   * Start observing an element for visibility.
+   * Called automatically by initCanvas.
+   */
+  function observe(el) {
+    _visMap.set(el, true);
+    _observer.observe(el);
+  }
+
+  /**
+   * Schedule next animation frame only if the element is visible.
+   * When the element scrolls back into view, the callback fires automatically.
+   * @param {HTMLElement|string} elOrId - element or its id
+   * @param {Function} fn - draw callback
+   */
+  function requestFrame(elOrId, fn) {
+    var el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+    if (_visMap.get(el) !== false) {
+      requestAnimationFrame(fn);
+    } else {
+      _restartMap.set(el, fn);
+    }
+  }
+
   /**
    * Initialize a square canvas at a given logical size.
-   * Returns { canvas, ctx, size }.
+   * Returns { canvas, ctx, size }. Automatically observes for visibility.
    */
   function initCanvas(id, size) {
     var c = document.getElementById(id);
@@ -30,6 +74,7 @@ var site = (function () {
     c.style.height = sz + 'px';
     var ctx = c.getContext('2d');
     ctx.scale(dpr, dpr);
+    observe(c);
     return { canvas: c, ctx: ctx, size: sz };
   }
 
@@ -50,6 +95,8 @@ var site = (function () {
     colors: colors,
     readColors: readColors,
     initCanvas: initCanvas,
-    rotateXY: rotateXY
+    rotateXY: rotateXY,
+    observe: observe,
+    requestFrame: requestFrame
   };
 })();
