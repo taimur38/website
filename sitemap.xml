@@ -21,6 +21,31 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://taimur.sh/thoughts</loc>
+    <lastmod>2026-04-06</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://taimur.sh/blog/so-you-want-to-have-impact/</loc>
+    <lastmod>2026-04-07</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://taimur.sh/blog/prototyping-with-watson/</loc>
+    <lastmod>2026-04-06</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://taimur.sh/blog/voice-augmented-applications/</loc>
+    <lastmod>2026-04-06</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://taimur.sh/blog/ai-workflow/</loc>
+    <lastmod>2026-04-06</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://taimur.sh/visuals</loc>
     <lastmod>2026-04-03</lastmod>
     <priority>0.5</priority>
