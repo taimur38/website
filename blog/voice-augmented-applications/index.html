@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Principles for multi-modal interfaces — lessons from building voice-augmented applications on the Watson Cognitive Environments team.">
+  <title>Voice Augmented Applications — Taimur Shah</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { max-width: 960px; }
+
+    .post-meta {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 0.6rem;
+      text-align: center;
+    }
+    .post-title {
+      font-family: var(--display);
+      font-size: 1.85rem;
+      font-weight: 400;
+      line-height: 1.3;
+      margin-bottom: 0.4rem;
+      text-align: center;
+    }
+    .post-subtitle {
+      font-family: var(--display);
+      font-size: 1.15rem;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .post-body {
+      max-width: 62ch;
+      margin: 0 auto;
+    }
+    .post-body p {
+      font-size: 1rem;
+      line-height: 1.75;
+      margin-bottom: 1.3rem;
+    }
+    .post-body p:last-child { margin-bottom: 0; }
+    .post-body h3 {
+      font-family: var(--sans);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-top: 2rem;
+      margin-bottom: 0.6rem;
+    }
+    .post-body a {
+      text-decoration-color: var(--border);
+    }
+    .post-body a:hover {
+      text-decoration-color: var(--fg);
+    }
+
+    .originally {
+      max-width: 62ch;
+      margin: 2.5rem auto 0;
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .originally a {
+      color: var(--muted);
+      text-decoration: underline;
+      text-decoration-color: var(--border);
+    }
+    .originally a:hover {
+      color: var(--fg);
+      text-decoration-color: var(--fg);
+    }
+
+    .hero-img {
+      display: flex;
+      justify-content: center;
+      margin: 0 -1.5rem 2.5rem;
+    }
+    .hero-img img {
+      width: 100%;
+      max-width: 750px;
+      height: auto;
+      display: block;
+    }
+
+    footer { margin-top: 3rem; }
+
+    @media (max-width: 480px) {
+      .post-title { font-size: 1.5rem; }
+      .post-subtitle { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="site-name" style="text-decoration:none">Taimur Shah</a>
+    <nav>
+      <a href="/resume">work</a>
+      <a href="/visuals">visuals</a>
+      <a href="#" onclick="this.href='mailto:'+['taimur_shah','hks.harvard.edu'].join('@')">contact</a>
+    </nav>
+  </header>
+
+  <article>
+    <p class="post-meta">February 2018</p>
+    <h1 class="post-title">Voice Augmented Applications</h1>
+    <p class="post-subtitle">Principles for Multi-Modal Interfaces</p>
+
+    <div class="hero-img">
+      <img src="hero.webp" alt="Voice Augmented Applications">
+    </div>
+
+    <div class="post-body">
+      <p>On the Watson Cognitive Environments team, we explored ways that Watson could improve human-computer interaction. We built various gesture based interactions using body tracking, spatial input tools and both passive and active voice driven applications. Ultimately, what was actually useful for our target environment was augmenting applications that were driven by spatial inputs (think wii-mote) with voice commands. There were a few key principles we discovered while refining this interaction pattern, both for improving the performance of the system and for delivering a better user experience.</p>
+
+      <h3>The Case for Voice</h3>
+      <p>Why would you ever want voice commands on an application you can get through using regular point and click methods? One case is for cutting through deep nested menus. Another is selecting an option from a long list that you don't want to read through. Any time it's annoying to type, for example tiny touch keyboards, voice could be better. Maybe multiple people want to collaborate and use an application together, and voice is easier than passing around a keyboard. Our use case featured all of these scenarios, and so theoretically benefited greatly from the addition of voice. However there were several issues we ran into in implementation.</p>
+
+      <h3>Speech to Text Performance</h3>
+      <p>While everyone's voice recognition service continues to get better over time, you can't escape from the fact that it isn't perfect. Your system will make mistakes. There are a few key optimizations you can make with IBM Watson's <a href="https://www.ibm.com/watson/services/speech-to-text/">speech-to-text service</a> that can improve performance significantly, and will be necessary for a good user experience.</p>
+
+      <h3>Custom Language Model</h3>
+      <p>If your application has a largely static, global menu of buttons/commands that can be triggered at any time, you should add all the ways to trigger these to your STT service's language model. By providing this language model, you are telling the service that the probability of seeing these phrases is high, and the service can bias its transcription towards this expected output. This makes a significant performance impact on detecting those commands accurately, and makes a big impact on the overall performance of your application.</p>
+
+      <h3>Dynamic Keyword Spotting</h3>
+      <p>Another argument you can provide the Watson STT service is a list of keywords you expect to hear. Similar to the language model, the service will be extra sensitive to detecting words on that list. The practical difference between the language model and this is that the model takes some time to train before it can be used. As a result it performs better, but it means you won't be able to generate models in real-time and use them as your user goes through the application. Whenever you have voice-selectable content that changes over time in unpredictable ways, you should supply them as keywords to the service. This is especially useful for using voice to sift through a large, dynamically generated list. Here you will need to do some extra work on the engineering side, because your application needs to communicate portions of its state to the STT service, and the Watson API does not make this very easy (you will need to create a new WebSocket connection to the service for each update). However the payoff in user experience is well worth the extra effort.</p>
+
+      <h3>Remembering the Commands</h3>
+      <p>There is no use asking your user to memorize the voice commands. Not only because you shouldn't put extra burden on the user, but because it doesn't work. When we use applications today, there's very little that you need to remember. Typically every action that you might want to take labels and explains itself, and is visible at all times. You don't need to remember where the buttons are — you visually search the page, find what you're looking for and then click it. An incredibly useful pattern we started using was to label all our buttons with the voice command that would trigger it. This also means for toggles, clicking or giving that command would then switch the label to its opposite. For example a toggle for "turn on lights" turns into "turn off lights" after it's selected. Now your user doesn't need to remember anything, and everything is available via a visual search on the application.</p>
+
+      <h3>Wake Words</h3>
+      <p>A wake word is just a phrase you have to utter which tells the system that you are about to talk to it. When building your application, you will need to decide if you want to use one or not, and there are some performance considerations to take into account. In your speech to text service, you (the client) are sending audio data over the network and expecting text to come back in the correct order. It takes some nonzero time for this transcription to take place, and if you have a microphone on and people are talking for an extended period of time, you end up with a significant gap between what is being said in real-time and what is coming back from the STT service. Basically, there will be lag. This is (partly) why your phone and home voice assistant are using hardware circuits and offline processing dedicated to detecting your wake word. Needless to say this is a significant barrier to overcome when trying to implement your own voice augmented application. Our solution to mitigate this was to create another process which was using the Microsoft offline speech-to-text service with a limited dictionary of English words dedicated to detecting our wake word. When this process detected our wake word, it would send a message to our Watson Speech to Text client, which would then begin processing audio. Another, much simpler, option is to have a "push to talk" button or hardware switch to unmute/mute the microphone.</p>
+
+      <h3>Conclusion</h3>
+      <p>There are currently not too many applications and use-cases that warrant voice control, but I believe over time there will be more. Many people today focus on building applications as chatbots, and work towards extending these models to accept voice. However I believe humans and machines can communicate significantly better through a mix of conventional UI and voice. If transcription technology is not where we need it to be yet, language synthesis and the ability for machines to respond naturally in English is even further. The state of the art today in conversational interfaces involve a developer designing large conversation trees in an attempt to anticipate all user utterances and responding to them accordingly. Additionally, machines have a huge advantage in being able to communicate visually, which is a significantly higher bandwidth mode of communication. There is little reason to strip away that advantage, and we should place more emphasis on what can be gained by building multi-modal interactions, combining the strengths of machines with what is convenient for humans.</p>
+    </div>
+
+    <p class="originally">Originally published on <a href="https://medium.com/@taimur38/voice-augmented-applications-1f03c97018cb">Medium</a>.</p>
+  </article>
+
+  <footer>
+    <a href="/">← taimur.sh</a>
+  </footer>
+
+  <script src="/shared.js"></script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Notes on integrating AI into a research production process — and guarding against atrophy.">
+  <title>A Note on our AI Workflow Discussion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,400&family=Inter:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { max-width: 960px; }
+
+    /* ── Post ───────────────────────────────────────────────── */
+    .post-meta {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      margin-bottom: 0.6rem;
+      text-align: center;
+    }
+    .post-title {
+      font-family: var(--display);
+      font-size: 1.85rem;
+      font-weight: 400;
+      line-height: 1.3;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .post-body {
+      max-width: 62ch;
+      margin: 0 auto;
+    }
+    .post-body p {
+      font-size: 1rem;
+      line-height: 1.75;
+      margin-bottom: 1.3rem;
+    }
+    .post-body p:last-child { margin-bottom: 0; }
+
+    /* ── Diagram ────────────────────────────────────────────── */
+    .diagram {
+      display: flex;
+      justify-content: center;
+      margin: 2.5rem 0;
+    }
+    .diagram svg {
+      width: 100%;
+      max-width: 680px;
+      height: auto;
+    }
+    .diagram svg text { fill: var(--fg); }
+    .diagram svg rect { stroke: var(--muted); fill: var(--bg); }
+    .diagram svg line, .diagram svg path { stroke: var(--muted); }
+    .diagram svg polygon { fill: var(--muted); }
+    .diagram svg circle { fill: var(--muted); }
+
+    /* ── Code block ─────────────────────────────────────────── */
+    .post-body pre {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.2rem 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      color: var(--fg);
+    }
+
+    /* ── Image ──────────────────────────────────────────────── */
+    .post-body .inline-img {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+    .post-body .inline-img img {
+      max-width: 100%;
+      width: 480px;
+      border-radius: 4px;
+    }
+
+    /* ── Ordered list ───────────────────────────────────────── */
+    .post-body ol {
+      font-size: 1rem;
+      line-height: 1.75;
+      margin: 0.5rem 0 1.3rem 1.5rem;
+    }
+    .post-body ol li {
+      margin-bottom: 0.5rem;
+    }
+
+    footer { margin-top: 3rem; }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .post-title { font-size: 1.5rem; }
+      .diagram { margin: 1.5rem -0.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/" class="site-name" style="text-decoration:none">Taimur Shah</a>
+    <nav>
+      <a href="/resume">work</a>
+      <a href="/visuals">visuals</a>
+      <a href="#" onclick="this.href='mailto:'+['taimur_shah','hks.harvard.edu'].join('@')">contact</a>
+    </nav>
+  </header>
+
+  <article>
+    <p class="post-meta">March 2026</p>
+    <h1 class="post-title">A Note on our AI Workflow Discussion</h1>
+
+    <div class="post-body">
+      <p>The other day I presented my AI workflow at the office, and there was a great discussion. It was not so much about the specific tools that I use, but more about the principle of organizing your work and your AI so that you could get more out of working together. These were some of my reflections.</p>
+
+      <p>The main idea I oriented myself around was my 'production process'.</p>
+    </div>
+
+    <div class="diagram">
+      <svg viewBox="-10 -50 795 415" xmlns="http://www.w3.org/2000/svg" style="font-family: 'Inter', system-ui, sans-serif;">
+        <defs>
+          <marker id="arr" markerWidth="9" markerHeight="6" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 9 3, 0 6"/>
+          </marker>
+          <marker id="arr-g" markerWidth="9" markerHeight="6" refX="9" refY="3" orient="auto">
+            <polygon points="0 0, 9 3, 0 6" opacity="0.4"/>
+          </marker>
+          <marker id="arr-g-90" markerWidth="9" markerHeight="6" refX="9" refY="3" orient="90">
+            <polygon points="0 0, 9 3, 0 6" opacity="0.4"/>
+          </marker>
+          <marker id="arr-g-270" markerWidth="9" markerHeight="6" refX="9" refY="3" orient="270">
+            <polygon points="0 0, 9 3, 0 6" opacity="0.4"/>
+          </marker>
+        </defs>
+
+        <!-- INPUTS -->
+        <rect x="10" y="80" width="148" height="145" rx="5" stroke-width="1.5"/>
+        <text x="84" y="102" text-anchor="middle" font-size="13" font-weight="bold">inputs</text>
+        <line x1="20" y1="109" x2="148" y2="109" stroke-width="1" opacity="0.2"/>
+        <text x="84" y="127" text-anchor="middle" font-size="11" opacity="0.7">written reports · news</text>
+        <text x="84" y="145" text-anchor="middle" font-size="11" opacity="0.7">interviews</text>
+        <text x="84" y="163" text-anchor="middle" font-size="11" opacity="0.7">primary data analysis</text>
+        <text x="84" y="181" text-anchor="middle" font-size="11" opacity="0.7">feedback</text>
+        <text x="84" y="199" text-anchor="middle" font-size="10" opacity="0.4">(team · Ricardo)</text>
+
+        <!-- Inputs → Brain -->
+        <line x1="159" y1="153" x2="198" y2="153" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- BRAIN -->
+        <rect x="198" y="50" width="172" height="206" rx="5" stroke-width="1.5" opacity="0.95"/>
+        <text x="284" y="75" text-anchor="middle" font-size="13" font-weight="bold">your brain</text>
+        <line x1="208" y1="83" x2="360" y2="83" stroke-width="1" opacity="0.15"/>
+        <text x="284" y="103" text-anchor="middle" font-size="11" opacity="0.7">differential diagnostics</text>
+        <text x="284" y="122" text-anchor="middle" font-size="11" opacity="0.7">economics</text>
+        <text x="284" y="141" text-anchor="middle" font-size="11" opacity="0.7">complexity</text>
+        <text x="284" y="160" text-anchor="middle" font-size="11" opacity="0.7">political economy</text>
+        <line x1="208" y1="172" x2="360" y2="172" stroke-width="1" stroke-dasharray="4" opacity="0.2"/>
+        <text x="284" y="191" text-anchor="middle" font-size="11" opacity="0.4" font-style="italic">+ lurking ideologies</text>
+        <text x="284" y="211" text-anchor="middle" font-size="10" opacity="0.3">(also guide data analysis)</text>
+
+        <!-- Brain → Findings -->
+        <line x1="371" y1="120" x2="422" y2="100" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- INTERMEDIATE FINDINGS -->
+        <rect x="422" y="72" width="148" height="56" rx="5" stroke-width="1.5"/>
+        <text x="496" y="96" text-anchor="middle" font-size="13" font-weight="bold">intermediate</text>
+        <text x="496" y="115" text-anchor="middle" font-size="13" font-weight="bold">findings</text>
+
+        <!-- Findings → Communicate -->
+        <line x1="496" y1="128" x2="496" y2="182" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Findings → Final -->
+        <line x1="571" y1="100" x2="618" y2="110" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- COMMUNICATE -->
+        <rect x="422" y="182" width="148" height="96" rx="5" stroke-width="1.5"/>
+        <text x="496" y="204" text-anchor="middle" font-size="13" font-weight="bold">communicate</text>
+        <line x1="432" y1="211" x2="560" y2="211" stroke-width="1" opacity="0.2"/>
+        <text x="496" y="229" text-anchor="middle" font-size="11" opacity="0.7">team meetings</text>
+        <text x="496" y="247" text-anchor="middle" font-size="11" opacity="0.7">Ricardo slides</text>
+        <text x="496" y="265" text-anchor="middle" font-size="11" opacity="0.7">written reports</text>
+
+        <!-- FINAL OUTPUT -->
+        <rect x="618" y="90" width="140" height="60" rx="5" stroke-width="1.5"/>
+        <text x="688" y="116" text-anchor="middle" font-size="13" font-weight="bold">final output</text>
+        <text x="688" y="136" text-anchor="middle" font-size="11" opacity="0.7">report · slides</text>
+
+        <!-- Feedback loops (dashed) -->
+        <path d="M 496 72 C 496 28, 286 28, 284 28" stroke-width="1.5" fill="none" stroke-dasharray="5,4" opacity="0.35"/>
+        <path d="M 284 50 L 284 28" stroke-width="1.5" fill="none" stroke-dasharray="5,4" opacity="0.35"/>
+        <circle cx="284" cy="28" r="2.5" opacity="0.35"/>
+        <path d="M 284 28 C 200 28, 84 28, 84 80" stroke-width="1.5" fill="none" stroke-dasharray="5,4" opacity="0.35" marker-end="url(#arr-g-90)"/>
+        <text x="290" y="20" text-anchor="middle" font-size="11" opacity="0.35" font-style="italic">informs search for new inputs</text>
+
+        <path d="M 422 240 C 370 290, 240 290, 240 256" stroke-width="1.5" fill="none" stroke-dasharray="5,4" opacity="0.35" marker-end="url(#arr-g-270)"/>
+        <text x="330" y="303" text-anchor="middle" font-size="11" opacity="0.35" font-style="italic">feedback (verbal · written)</text>
+      </svg>
+    </div>
+
+    <div class="post-body">
+      <p>I had gotten a lot of value out of basically reflecting on what my production process is, and then taking steps to make that whole process legible to your AI companion. There are an infinite number of configurations of specific tools that would satisfy that idea. In my case, that started with reorganizing my project folder (radical) so that notes, readings, writing, code, data, and Zotero references all lived together and Claude Code had easy access to it. Specific skills, subagents, and tools that help with x, y, z task are also in the mix but are to me less interesting than the sort of 'big picture' way in which we are augmenting ourselves.</p>
+
+<pre>Project-Name/
+├── code/
+├── notes/                  ← symlinked to Obsidian project folder
+├── references.bib          ← auto-synced from Zotero
+├── report.md               ← writing at the top level (on purpose)
+└── archive/</pre>
+
+      <p>The next practice I took was to produce more intermediate outputs as I was working. When I read, I want to read more actively — always writing some note on a takeaway, a quote, or an impression together with a link to what was read. When I leave a meeting, to write something about the meeting. But most importantly, as I complete an analytical sprint, making sure that I write something about that as well. This helps in at least two ways — one, the act of writing more intermediate things helps you yourself internalize the work that's been done, two, your AI companion gets to come along on the journey and I've found it helps quite a bit with making the companion more effective.</p>
+
+      <p>I then invested in getting the companion embedded in my writing process. For me, that was switching more to writing notes, slides, etc. in markdown so Claude Code could easily see what was going on along with keeping the context of the rest of my process. I have scripts that take markdown and convert it into Growth Lab acceptable docx, pdf, slides, etc. There are many other, more sane, ways to accomplish this, but the main thing is that the companion have access to your writing document and also have access to the rest of the artifacts related to your production process. I wanted AI to remove the pain of writing especially — for me this was managing citations, figure numbers, and being able to directly reference the image files that I generate from code directly so that I can easily update it. Since Claude had access to my code, it could correctly title and source the figures, and since Claude had access to my reading documents, it could help me double-check citations and help remind me 'where was that thing that I read again'. As I write, I often update my figures also to create a final public-ready figure that directly aligns with the specific message I am going for in that paragraph — so this process becomes much more fluid as well.</p>
+
+      <p>Finally, I think once you set this up you will feel the incredible brain-augmenting power of AI. And very quickly, the next thing you may feel is a real sense of skills atrophying, dependence on the AI, and not just a temptation to automate away painful but important processes, but real pressure to do so in the name of productivity. It seems to be quite common that people overshoot AI usage and feel weird about it, especially for writing, and then cut back. You may be able to produce more stuff, which is better quality than before, but somehow stop or slow your own mental development process. Maybe you lose your power to imagine and think outside the box, or you stop evolving a finer grasp on a richer vocabulary because Claude always manages to put things in ways that are better than how you were doing it, so now you just vomit on the screen and Claude cleans it up. Maybe your brain on Claude Code is the same as humans in Wall-E on their chairs.</p>
+
+      <div class="inline-img">
+        <img src="https://compote.slate.com/images/fe8e6b45-1ea0-45db-ade4-7ce00647041b.jpeg?crop=1560%2C1040%2Cx0%2Cy0" alt="Humans in Wall-E on their chairs">
+      </div>
+
+      <p>To guard against that happening will be very personal for everyone, choosing their own set of tradeoffs. Here are some things that I want to try.</p>
+
+      <ol>
+        <li>I take the first pass at structure and draft, not AI</li>
+        <li>I ask AI for 3–5 options when asking for things, not just one. This helps me not just fixate on the one thing it tells me, keeps my brain active as I compare and contrast, and mix and match the ideas that come up.</li>
+        <li>Keep reading documents myself</li>
+        <li>Produce more intermediate outputs</li>
+        <li>Share more intermediate outputs and get human feedback. My anxiety kicks in when I need to share something to a wider human audience, which incentivizes me to stay sharp.</li>
+        <li>Go a bit out of my way to do some things (writing?) without AI</li>
+      </ol>
+
+      <p>I am very curious about the high-level ways in which everyone is managing their relationship with AI, and looking forward to continuing figuring this out with everyone.</p>
+    </div>
+  </article>
+
+  <footer>
+    <a href="/">← taimur.sh</a>
+  </footer>
+
+  <script src="/shared.js"></script>
+</body>
+</html>
