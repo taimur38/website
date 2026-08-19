@@ -89,6 +89,90 @@
        from JS rather than by a sibling selector. */
     .g-label.lit { opacity: 1; fill: var(--fg); }
     .g-dim { opacity: 0.25; }
+    /* A project dot is 4.5–6px across. Now that clicking one opens its card,
+       it needs a target you can actually land on, so each carries a
+       transparent disc. Theme circles are big enough to serve as their own. */
+    .g-hit { fill: transparent; }
+
+    /* ── Node modal ─────────────────────────────────────────── */
+    /* Graph nodes are 4–6px dots with a label that only appears on hover, so
+       the card itself is the detail view. Clicking a project node reopens it
+       here, unclamped, without leaving the graph. */
+    .modal {
+      width: min(38rem, calc(100vw - 2.5rem));
+      max-height: min(80vh, 44rem);
+      padding: 0;
+      overflow: hidden;
+      border: 1px solid var(--muted);
+      background: var(--bg);
+      color: var(--fg);
+      margin: auto;
+    }
+    /* The scroll lives on the inner box so the close button, absolutely placed
+       against the dialog, stays put while a long description scrolls under it. */
+    .modal-scroll {
+      max-height: inherit;
+      overflow-y: auto;
+      padding: 2.1rem 1.75rem 1.5rem;
+    }
+    .modal::backdrop { background: rgba(0, 0, 0, 0.4); }
+    @keyframes modal-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .modal[open] { animation: modal-in 0.18s cubic-bezier(0.22, 0.61, 0.36, 1); }
+    @media (prefers-reduced-motion: reduce) { .modal[open] { animation: none; } }
+    @media (prefers-color-scheme: dark) {
+      .modal::backdrop { background: rgba(0, 0, 0, 0.65); }
+    }
+    /* The clone keeps the card's internal rhythm but drops its frame — the
+       dialog is the frame now. */
+    .modal .proj {
+      border: none;
+      padding: 0;
+      background: none;
+    }
+    .modal .proj-title { font-size: 1.3rem; }
+    .modal .proj-desc { font-size: 0.95rem; }
+    .modal .proj-foot { padding-top: 1.1rem; }
+    .modal-close {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      padding: 0.1rem 0.3rem;
+      font-family: var(--sans);
+      font-size: 1.15rem;
+      line-height: 1;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .modal-close:hover { color: var(--fg); }
+    /* Themes double as filters everywhere else on the page; keeping that true
+       inside the modal is what makes it a way through the graph, not a dead
+       end. */
+    .modal-themes {
+      margin-top: 1.1rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.4rem 0.75rem;
+      font-family: var(--sans);
+      font-size: 0.74rem;
+      color: var(--muted);
+    }
+    .modal-themes button {
+      background: none;
+      border: none;
+      padding: 0;
+      font: inherit;
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--border);
+      text-underline-offset: 3px;
+    }
+    .modal-themes button:hover { color: var(--accent); text-decoration-color: var(--accent); }
 
     /* ── Filter row ─────────────────────────────────────────── */
     .controls {
@@ -213,13 +297,18 @@
       line-height: 1.6;
       margin-top: 0.6rem;
     }
-    .proj-desc.clamped {
+    .proj-desc p + p { margin-top: 0.7rem; }
+    /* The clamp lands on the lead paragraph and any paragraph after it is
+       hidden outright, so a long description can be broken up without the grid
+       having to carry the whole thing. */
+    .proj-desc.clamped > p:first-child {
       display: -webkit-box;
       -webkit-line-clamp: 4;
       line-clamp: 4;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+    .proj-desc.clamped > p:first-child ~ p { display: none; }
     .more {
       align-self: flex-start;
       background: none;
@@ -234,6 +323,26 @@
       text-underline-offset: 3px;
     }
     .more:hover { color: var(--fg); }
+
+    /* ── Screenshot ─────────────────────────────────────────── */
+    /* The grid stays text-first: a shot sits behind the More toggle, so thirty
+       cards don't become a wall of images. The modal has the room, so it shows
+       the shot outright. */
+    .proj-shot {
+      display: none;
+      width: 100%;
+      height: auto;
+      margin-top: 0.85rem;
+      border: 1px solid var(--border);
+    }
+    .proj.shot-open .proj-shot,
+    .modal .proj-shot { display: block; }
+    /* The tools all have light chrome; at full strength the shot punches a
+       hole in the dark page, so it sits back until you look at it. */
+    @media (prefers-color-scheme: dark) {
+      .proj-shot { opacity: 0.86; transition: opacity 0.2s; }
+      .proj-shot:hover { opacity: 1; }
+    }
 
     .proj-foot {
       margin-top: auto;
@@ -279,7 +388,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .proj, .controls select { transition: none; }
+      .proj, .controls select, .proj-shot { transition: none; }
     }
   </style>
 </head>
@@ -350,7 +459,9 @@
           <span class="proj-year">2019–21</span>
         </div>
         <p class="proj-org">CERP Labs · Punjab, Pakistan</p>
-        <p class="proj-desc">A school management application built for low-cost private schools in Pakistan — attendance, fees, results and parent communication for schools that had never run software before. I led product design and development, then designed the sales strategy and built the field sales team that carried it: door-to-door acquisition on a commission structure, with the analytics to see which districts and which reps were working. Rolled out to more than 700 schools and 80,000 students across six districts of Punjab.</p>
+        <div class="proj-desc">
+          <p>A school management application built for low-cost private schools in Pakistan — attendance, fees, results and parent communication for schools that had never run software before. I led product design and development, then designed the sales strategy and built the field sales team that carried it: door-to-door acquisition on a commission structure, with the analytics to see which districts and which reps were working. Rolled out to more than 700 schools and 80,000 students across six districts of Punjab.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">Education · Product</span>
         </div>
@@ -362,20 +473,67 @@
           <span class="proj-year">2018–21</span>
         </div>
         <p class="proj-org">Centre for Economic Research in Pakistan · Lahore</p>
-        <p class="proj-desc">Founded a revenue-generating software unit inside an economics research institution. Built financially sustainable model, organizational capacity and trained a first-in-class software development team. Collaborated with research teams, private sector partners and international development organizations across projects in education, healthcare and COVID-19 response.</p>
+        <div class="proj-desc">
+          <p>Founded a revenue-generating software unit inside an economics research institution. Built financially sustainable model, organizational capacity and trained a first-in-class software development team. Collaborated with research teams, private sector partners and international development organizations across projects in education, healthcare and COVID-19 response.</p>
+          <p>The schools and health workers these applications served did not have reliable connectivity. To serve them I built an offline-first stack in Elixir, React and TypeScript: an application keeps its state locally and stays fully editable with no connection, and once connectivity returns it syncs with the backend and across devices in the background, resolving conflicting edits as it goes.</p>
+          <p>The framework let our engineering team stand up new offline-first applications and build complex features across the stack without needing to fully understand how the distributed state underneath was managed. It is what let Labs produce the specialized engineering needed to reach the populations we were targeting, quickly and at scale.</p>
+        </div>
         <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://github.com/CERP/syncr" target="_blank" rel="noopener">syncr ↗</a>
+            <a href="https://github.com/CERP/framework" target="_blank" rel="noopener">Framework ↗</a>
+          </span>
           <span class="proj-tags">Org building</span>
         </div>
       </article>
 
-      <article class="proj" data-org="growth-lab" data-theme="agriculture climate" data-type="research" data-year="2024" data-title="Morocco Growth Diagnostic" data-featured>
+      <article class="proj" data-org="growth-lab" data-theme="agriculture climate" data-type="research" data-year="2024" data-title="Morocco Growth Diagnostic">
         <div class="proj-head">
           <h2 class="proj-title">Morocco Growth Diagnostic</h2>
           <span class="proj-year">2024</span>
         </div>
         <p class="proj-org">Harvard Growth Lab</p>
-        <p class="proj-desc">Co-authored a growth diagnostic of Morocco that asked what prevented Morocco from achieving a growth 'miracle', despite solid performance on economic fundamentals. My work focused on climate and agricultural shocks, alongside stalled structural transformation and the low and falling participation of women in the labour force.</p>
+        <div class="proj-desc">
+          <p>Co-authored a growth diagnostic of Morocco that asked what prevented Morocco from achieving a growth 'miracle', despite solid performance on economic fundamentals. My work focused on climate and agricultural shocks, alongside stalled structural transformation and the low and falling participation of women in the labour force.</p>
+        </div>
         <div class="proj-foot">
+          <span class="proj-tags">Agriculture · Climate · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="institutions industrial-policy" data-type="research" data-year="2026" data-title="Bolivia Growth Diagnostic">
+        <div class="proj-head">
+          <h2 class="proj-title">Bolivia Growth Diagnostic</h2>
+          <span class="proj-year">2025–26</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab · with Ricardo Hausmann and Lucila Venturi</p>
+        <div class="proj-desc">
+          <p>Co-authored the Growth Lab's diagnostic of Bolivia, an eighteen-month engagement carried out during the country's foreign-exchange and fiscal crisis. The work traces the macroeconomic collapse to an erosion of the conditions for private investment rather than to an external shock: the 2006 hydrocarbons reversal and the decade-long decline in gas production that followed it, regulatory uncertainty in mining, and export permits and a transgenic seed ban in agriculture.</p>
+          <p>Published as a seven-paper series covering macroeconomics, energy, mining and lithium, agriculture and tourism, with a synthesis setting out reform priorities. I led the agriculture volume and contributed to the synthesis.</p>
+        </div>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://growthlab.hks.harvard.edu/publication/bolivias-economic-pivot-main-findings-and-reform-priorities/" target="_blank" rel="noopener">Publication ↗</a>
+            <a href="https://growthlab.hks.harvard.edu/project/bolivias-economic-pivot/" target="_blank" rel="noopener">Series ↗</a>
+          </span>
+          <span class="proj-tags">Political Economy · Industrial Policy · Research</span>
+        </div>
+      </article>
+
+      <article class="proj" data-org="growth-lab" data-theme="agriculture climate" data-type="research" data-year="2026" data-title="Bolivia Agriculture Report" data-featured>
+        <div class="proj-head">
+          <h2 class="proj-title">Bolivia: Agricultural Potential and Challenges</h2>
+          <span class="proj-year">2026</span>
+        </div>
+        <p class="proj-org">Harvard Growth Lab · with Lucila Venturi and Ricardo Hausmann</p>
+        <div class="proj-desc">
+          <p>Lead author on the agriculture volume of the Bolivia series. Agricultural output has grown faster since 2000 than in any earlier period, but almost entirely through expansion of the area under cultivation rather than through yields — labour productivity is the lowest among regional peers, and continuing on the extensive margin implies further deforestation and the loss of market access that follows from it. The second constraint is the food-security framework, under which export permits are issued only once domestic demand is judged to be met, suppressing the supply response the policy was meant to secure.</p>
+          <p>The report argues for a region-specific approach that lets each of Bolivia's agro-ecological zones reach its own productive potential, and identifies the policy-created constraints — the transgenic seed ban, access to fertiliser and machinery, export restrictions — as those available for immediate reform.</p>
+        </div>
+        <div class="proj-foot">
+          <span class="proj-links">
+            <a href="https://growthlab.hks.harvard.edu/publication/bolivias-economic-pivot-agricultural-potential-and-challenges/" target="_blank" rel="noopener">Publication ↗</a>
+          </span>
           <span class="proj-tags">Agriculture · Climate · Research</span>
         </div>
       </article>
@@ -386,28 +544,33 @@
           <span class="proj-year">2026</span>
         </div>
         <p class="proj-org">Harvard Growth Lab</p>
-        <p class="proj-desc">A spatial-equilibrium reading of Morocco's cities, 2014–2024, published as an interactive report. We treat cities as labor markets, using functional urban areas estimated from satellite data from the GHSL rather than as administrative units. It tracks migration, wages, employment composition and economic complexity, and asks for each city whether growth is constrained more by labour demand or labour supply. Bilingual EN/FR.</p>
+        <div class="proj-desc">
+          <p>A spatial-equilibrium reading of Morocco's cities, 2014–2024, published as an interactive report. We treat cities as labor markets, using functional urban areas estimated from satellite data from the GHSL rather than as administrative units. It tracks migration, wages, employment composition and economic complexity, and asks for each city whether growth is constrained more by labour demand or labour supply. Bilingual EN/FR.</p>
+        </div>
+        <img class="proj-shot" src="/img/projects/morocco-cities.webp" width="1200" height="750"
+             loading="lazy" alt="Morocco Cities tool showing the Casablanca functional urban area and its constituent communes">
         <div class="proj-foot">
           <span class="proj-links">
-            <a href="https://morocco-cities.taimur.sh" target="_blank" rel="noopener">Live ↗</a>
-            <a href="https://github.com/taimur38/morocco-cities-tool" target="_blank" rel="noopener">Source ↗</a>
+            <a href="https://economic-complexity-unit.com/#cities" target="_blank" rel="noopener">Live ↗</a>
           </span>
           <span class="proj-tags">Cities · Live tool</span>
         </div>
       </article>
 
-      <article class="proj" data-org="beaj" data-theme="education" data-type="product" data-year="2026" data-title="Beaj" data-featured>
+      <article class="proj" data-org="beaj" data-theme="education consumer ai" data-type="product" data-year="2026" data-title="Beaj" data-featured>
         <div class="proj-head">
           <h2 class="proj-title">Beaj</h2>
           <span class="proj-year">2023–</span>
         </div>
         <p class="proj-org">Chief Technology Officer · Cambridge, MA</p>
-        <p class="proj-desc">Beaj uses WhatsApp to teach underserved populations. I define and lead Beaj's technology strategy, harnessing modern architectures, AI services, and conversational interfaces to scale impact and advance the organization's mission.</p>
+        <div class="proj-desc">
+          <p>Beaj uses WhatsApp to teach underserved populations. I define and lead Beaj's technology strategy, harnessing modern architectures, AI services, and conversational interfaces to scale impact and advance the organization's mission.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://www.beaj.org/" target="_blank" rel="noopener">beaj.org ↗</a>
           </span>
-          <span class="proj-tags">Education · Product</span>
+          <span class="proj-tags">Education · Consumer Web · AI · Product</span>
         </div>
       </article>
 
@@ -417,7 +580,12 @@
           <span class="proj-year">2017–18</span>
         </div>
         <p class="proj-org">IBM Watson</p>
-        <p class="proj-desc">A bot that improves conversations. Authored and presented a thesis on using AI as an agent-in-the-middle — not answering the human, but enriching what two humans are already saying to each other — and built a conversational framework on Watson services to test the idea.</p>
+        <div class="proj-desc">
+          <p>A bot that improves conversations. Authored and presented a thesis on using AI as an agent-in-the-middle — not answering the human, but enriching what two humans are already saying to each other — and built a conversational framework on Watson services to test the idea.</p>
+          <p>The architecture was something I was proud of. Handlers, called minions, declare which other minions' outputs they need, so each message builds its own dependency graph that the scheduler resolves in order, handing every minion the accumulated enrichments rather than the raw text. Minions are generators that yield promises: a yield suspends until someone replies, so a multi-turn exchange reads as straight-line code and its state lives in the closure rather than a session store. The effect is that a complex plugin can be written as simple, linear code. Since a minion can declare new requirements mid-conversation, that graph is rebuilt as the exchange moves rather than fixed up front. The enrichments accumulate into a Neo4J knowledge graph.</p>
+        </div>
+        <img class="proj-shot" src="/img/projects/toombot.webp" width="1200" height="900"
+             loading="lazy" alt="Toombot architecture: an incoming chat message goes to a scheduler, which fans it out to minions whose enrichments feed into one another">
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://github.com/taimur38/toombot" target="_blank" rel="noopener">Source ↗</a>
@@ -436,7 +604,11 @@
           <span class="proj-year">2025</span>
         </div>
         <p class="proj-org">Harvard Growth Lab</p>
-        <p class="proj-desc">A place-by-place read of municipal economies in the United States, Mexico and Great Britain: how population and wages have moved, where each place sits within its metropolitan labour market, and which places most resemble it. Parquet loads directly in the browser, so the whole dashboard is a static build with no backend.</p>
+        <div class="proj-desc">
+          <p>A place-by-place read of municipal economies in the United States, Mexico and Great Britain: how population and wages have moved, where each place sits within its metropolitan labour market, and which places most resemble it. Parquet loads directly in the browser, so the whole dashboard is a static build with no backend.</p>
+        </div>
+        <img class="proj-shot" src="/img/projects/cities.webp" width="1200" height="750"
+             loading="lazy" alt="Cities dashboard showing a place profile for Boston with indicator table and boundary map">
         <div class="proj-foot">
           <span class="proj-tags">Cities · Live tool</span>
         </div>
@@ -449,7 +621,9 @@
           <span class="proj-year">2025</span>
         </div>
         <p class="proj-org">Harvard Growth Lab · with Zakaria Ouzif</p>
-        <p class="proj-desc">The Growth Lab's Morocco diagnostic identified three binding constraints — weak export performance, micro-level distortions concentrated in labor regulation, and the exclusion of women from the economy. This paper asks whether they are one, tracing the impacts of the minimum wage and employment protection law through to the other two.</p>
+        <div class="proj-desc">
+          <p>The Growth Lab's Morocco diagnostic identified three binding constraints — weak export performance, micro-level distortions concentrated in labor regulation, and the exclusion of women from the economy. This paper asks whether they are one, tracing the impacts of the minimum wage and employment protection law through to the other two.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">Political Economy · Research</span>
         </div>
@@ -461,7 +635,9 @@
           <span class="proj-year">2024</span>
         </div>
         <p class="proj-org">Harvard Growth Lab · with OCP Group and UM6P</p>
-        <p class="proj-desc">In this paper we analyzed the labor market constraints that would threaten Morocco's green hydrogen strategy. I used Employer-employee matched records to generate a network of labor flows between industries, and then used graph algorithms to flag critical industries that cannot scale quickly.</p>
+        <div class="proj-desc">
+          <p>In this paper we analyzed the labor market constraints that would threaten Morocco's green hydrogen strategy. I used Employer-employee matched records to generate a network of labor flows between industries, and then used graph algorithms to flag critical industries that cannot scale quickly.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">Climate · Industrial Policy · Research</span>
         </div>
@@ -473,7 +649,9 @@
           <span class="proj-year">2024</span>
         </div>
         <p class="proj-org">Harvard Growth Lab · Sonora, Mexico</p>
-        <p class="proj-desc">A companion to the Hermosillo diagnostic, asking what the city could supply to the global energy transition. Which activities in green value chains are within reach of what Hermosillo already knows how to do, and what industrial policies could be enacted to take advantage of the opportunities.</p>
+        <div class="proj-desc">
+          <p>A companion to the Hermosillo diagnostic, asking what the city could supply to the global energy transition. Which activities in green value chains are within reach of what Hermosillo already knows how to do, and what industrial policies could be enacted to take advantage of the opportunities.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://growthlab.hks.harvard.edu/publication/green-growth-opportunities-for-hermosillo-supplying-the-global-energy-transition/" target="_blank" rel="noopener">Publication ↗</a>
@@ -488,7 +666,10 @@
           <span class="proj-year">2020–21</span>
         </div>
         <p class="proj-org">CERP Labs · Pakistan</p>
-        <p class="proj-desc">An education platform addressing constraints on learning outcomes identified by the LEAPS research programme. Several components: a marketplace connecting low-cost private schools with education service providers, an emergency student learning portal built during COVID school closures, and a merge with MISchool's capabilities so the two could work together to mitigate learning losses.</p>
+        <div class="proj-desc">
+          <p>An education platform addressing constraints on learning outcomes identified by the LEAPS research programme. Several components: a marketplace connecting low-cost private schools with education service providers, an emergency student learning portal built during COVID school closures, and a merge with MISchool's capabilities so the two could work together to mitigate learning losses.</p>
+          <p>Not every school would use a web application, so the marketplace also ran over the phone. An operator took the call, pulled the school up by its number, and edited its profile or placed an order on its behalf against the same catalogue, with the system messaging the school back over SMS — so a school needed nothing more than a phone to transact.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">Education · Product</span>
         </div>
@@ -500,7 +681,9 @@
           <span class="proj-year">2020</span>
         </div>
         <p class="proj-org">CERP Labs for the World Bank</p>
-        <p class="proj-desc">Designed, led and won a competitive World Bank proposal to build an interactive dashboard mapping food-insecurity hotspots in Karachi's informal settlements. Produced rapidly for government officials in the wake of COVID-19 lockdowns, then generalised to support a wide range of indicators across multiple cities and survey sources.</p>
+        <div class="proj-desc">
+          <p>Designed, led and won a competitive World Bank proposal to build an interactive dashboard mapping food-insecurity hotspots in Karachi's informal settlements. Produced rapidly for government officials in the wake of COVID-19 lockdowns, then generalised to support a wide range of indicators across multiple cities and survey sources.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">Cities · Health · Live tool</span>
         </div>
@@ -512,7 +695,9 @@
           <span class="proj-year">2020</span>
         </div>
         <p class="proj-org">CERP Labs · Punjab, Pakistan</p>
-        <p class="proj-desc">Conceived and led a public assessment quantifying the economic impact of COVID-19 and the lockdowns on households in Punjab. Brought principal investigators on board, secured the funding, and managed a multi-round survey on a random-digit-dial sample. Produced several publicly distributed reports and an interactive dashboard so the findings could be explored.</p>
+        <div class="proj-desc">
+          <p>Conceived and led a public assessment quantifying the economic impact of COVID-19 and the lockdowns on households in Punjab. Brought principal investigators on board, secured the funding, and managed a multi-round survey on a random-digit-dial sample. Produced several publicly distributed reports and an interactive dashboard so the findings could be explored.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">Health · Research</span>
         </div>
@@ -524,7 +709,9 @@
           <span class="proj-year">2024</span>
         </div>
         <p class="proj-org">Harvard Growth Lab · Sonora, Mexico</p>
-        <p class="proj-desc">Co-authored a subnational growth diagnostic of Hermosillo, focused on the role of water as a binding constraint to growth. The work integrated spatial equilibrium into subnational diagnostics — treating a city's constraints as partly a function of its position relative to other places, rather than as internal properties alone.</p>
+        <div class="proj-desc">
+          <p>Co-authored a subnational growth diagnostic of Hermosillo, focused on the role of water as a binding constraint to growth. The work integrated spatial equilibrium into subnational diagnostics — treating a city's constraints as partly a function of its position relative to other places, rather than as internal properties alone.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://growthlab.hks.harvard.edu/publication/growth-through-diversification-in-hermosillo/" target="_blank" rel="noopener">Publication ↗</a>
@@ -540,7 +727,9 @@
           <span class="proj-year">2024</span>
         </div>
         <p class="proj-org">Harvard Growth Lab</p>
-        <p class="proj-desc">Developed industrial policy strategy for the United Arab Emirates on carbon capture, utilisation and storage in support of green growth initiatives.</p>
+        <div class="proj-desc">
+          <p>Developed industrial policy strategy for the United Arab Emirates on carbon capture, utilisation and storage in support of green growth initiatives.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">Climate · Industrial Policy · Research</span>
         </div>
@@ -552,7 +741,9 @@
           <span class="proj-year">2023–24</span>
         </div>
         <p class="proj-org">Harvard Growth Lab</p>
-        <p class="proj-desc">Original research applying an economic complexity lens to racial inclusion at the industry level: which industries a city holds, and their particular racial compositions. This enables racial equity analysis for industrial policies. Used the research to analyse policies under consideration by the Mayor's office in Cleveland.</p>
+        <div class="proj-desc">
+          <p>Original research applying an economic complexity lens to racial inclusion at the industry level: which industries a city holds, and their particular racial compositions. This enables racial equity analysis for industrial policies. Used the research to analyse policies under consideration by the Mayor's office in Cleveland.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://growthlab.hks.harvard.edu/publication/teaching-case-spurring-inclusive-growth-in-cleveland-ohio/" target="_blank" rel="noopener">Teaching case ↗</a>
@@ -567,7 +758,11 @@
           <span class="proj-year">2026</span>
         </div>
         <p class="proj-org">Harvard Growth Lab</p>
-        <p class="proj-desc">Characterizing yield performance at the country × agro-ecological zone level, built on FAO GAEZ pixel data. Country-AEZs are clustered based on their AEZ characteristics and revealed crop-choice mixtures. Individual crop yields are then benchmarked against the best performer in the cluster, and then aggregated to generate a comparable yield ratio metric indicating distance from potential yield.</p>
+        <div class="proj-desc">
+          <p>Characterizing yield performance at the country × agro-ecological zone level, built on FAO GAEZ pixel data. Country-AEZs are clustered based on their AEZ characteristics and revealed crop-choice mixtures. Individual crop yields are then benchmarked against the best performer in the cluster, and then aggregated to generate a comparable yield ratio metric indicating distance from potential yield.</p>
+        </div>
+        <img class="proj-shot" src="/img/projects/agri.webp" width="1200" height="750"
+             loading="lazy" alt="World map of country by agro-ecological zone polygons coloured by composite yield-frontier ratio">
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://agri.taimur.sh" target="_blank" rel="noopener">Live ↗</a>
@@ -583,7 +778,11 @@
           <span class="proj-year">2026–</span>
         </div>
         <p class="proj-org">Growth Lab</p>
-        <p class="proj-desc">A research agenda on bringing political economy into growth diagnostics, theoretically grounded and as data-driven as possible. Political settlement analysis is the foundational model: it incorporates the other canonical models in political science, and works at time scales practical for applied work. I developed a tool that collects indicators on political settlements, state capacity and political institutions to operationalize the model, and matches countries to institutional peers by distance on V-Dem.</p>
+        <div class="proj-desc">
+          <p>A research agenda on bringing political economy into growth diagnostics, theoretically grounded and as data-driven as possible. Political settlement analysis is the foundational model: it incorporates the other canonical models in political science, and works at time scales practical for applied work. I developed a tool that collects indicators on political settlements, state capacity and political institutions to operationalize the model, and matches countries to institutional peers by distance on V-Dem.</p>
+        </div>
+        <img class="proj-shot" src="/img/projects/institutions.webp" width="1200" height="750"
+             loading="lazy" alt="Country profile page listing a country's closest institutional peers by distance on V-Dem indicators">
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://institutions.taimur.sh" target="_blank" rel="noopener">Tool — under construction ↗</a>
@@ -598,7 +797,9 @@
           <span class="proj-year">2025</span>
         </div>
         <p class="proj-org">World Bank · Short-Term Consultant</p>
-        <p class="proj-desc">Research on regenerative agriculture across South Asia — what the practices are, where the evidence on yields and soil outcomes actually holds, and what constrains wider adoption by farmers.</p>
+        <div class="proj-desc">
+          <p>Research on regenerative agriculture across South Asia — what the practices are, where the evidence on yields and soil outcomes actually holds, and what constrains wider adoption by farmers.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">Agriculture · Climate · Research</span>
         </div>
@@ -610,7 +811,9 @@
           <span class="proj-year">2025</span>
         </div>
         <p class="proj-org">World Bank · Short-Term Consultant</p>
-        <p class="proj-desc">Optimising a global trade model incorporating climate policy scenarios — border adjustments, carbon pricing and their propagation through trade patterns, with the computational work of making a model of that size solve in usable time.</p>
+        <div class="proj-desc">
+          <p>Optimising a global trade model incorporating climate policy scenarios — border adjustments, carbon pricing and their propagation through trade patterns, with the computational work of making a model of that size solve in usable time.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">Climate · Research</span>
         </div>
@@ -622,7 +825,9 @@
           <span class="proj-year">2022</span>
         </div>
         <p class="proj-org">Agency for Strategic Planning and Reforms · Astana</p>
-        <p class="proj-desc">Economic advisor to ASPIRE, focused on industrial policy. Analysed the existing structure of state support for industry in Kazakhstan and asked which market failures each instrument was supposed to address — finding, in several cases, none that were identified. Proposed both changes to specific policies and a better institutional process for formulating new ones.</p>
+        <div class="proj-desc">
+          <p>Economic advisor to ASPIRE, focused on industrial policy. Analysed the existing structure of state support for industry in Kazakhstan and asked which market failures each instrument was supposed to address — finding, in several cases, none that were identified. Proposed both changes to specific policies and a better institutional process for formulating new ones.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">Industrial Policy · Research</span>
         </div>
@@ -634,7 +839,10 @@
           <span class="proj-year">2022</span>
         </div>
         <p class="proj-org">Harvard Kennedy School · Second Year Policy Analysis</p>
-        <p class="proj-desc">A diagnostic of agricultural productivity in Pakistan, focusing on yield growth. The research identified poor yield performance as a central issue in Pakistani agriculture, and then develops two informative case studies - cotton, declining, and corn, on the rise - to tease out common underlying factors. It identifies seed quality as the main issue. The report then asks what market failures have prevented the private sector from improving seed quality separately, and concludes by recommending public seed quality competitions held by the government to resolve information failures.</p>
+        <div class="proj-desc">
+          <p>A diagnostic of agricultural productivity in Pakistan, focusing on yield growth. The research identified poor yield performance as a central issue in Pakistani agriculture, and then develops two informative case studies - cotton, declining, and corn, on the rise - to tease out common underlying factors. It identifies seed quality as the main issue.</p>
+          <p>The report then asks what market failures have prevented the private sector from improving seed quality separately, and concludes by recommending public seed quality competitions held by the government to resolve information failures.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://github.com/taimur38/SYPA" target="_blank" rel="noopener">Analysis ↗</a>
@@ -649,7 +857,9 @@
           <span class="proj-year">2015–17</span>
         </div>
         <p class="proj-org">IBM Watson · Cognitive Environments</p>
-        <p class="proj-desc">Architected and led development of the core software library and a set of agents managing distributed, multimodal input and output enriched by Watson services — speech, gesture, displays and sensors across a physical room treated as one addressable surface. The library let downstream developers write plugins and applications for cognitive environments.</p>
+        <div class="proj-desc">
+          <p>Architected and led development of the core software library and a set of agents managing distributed, multimodal input and output enriched by Watson services — speech, gesture, displays and sensors across a physical room treated as one addressable surface. The library let downstream developers write plugins and applications for cognitive environments.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">AI · Product</span>
         </div>
@@ -661,7 +871,9 @@
           <span class="proj-year">2016</span>
         </div>
         <p class="proj-org">IBM Watson</p>
-        <p class="proj-desc">Led development of a product covering political contributions, news, legislative activity and lobbyist records, exposed through a custom question-and-answer interface and APIs. Architected the frontend so a large team could work on it simultaneously without collisions, and designed the interactive graph visualisation that made traversing the underlying knowledge graph intuitive and powerful.</p>
+        <div class="proj-desc">
+          <p>Led development of a product covering political contributions, news, legislative activity and lobbyist records, exposed through a custom question-and-answer interface and APIs. Architected the frontend so a large team could work on it simultaneously without collisions, and designed the interactive graph visualisation that made traversing the underlying knowledge graph intuitive and powerful.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-tags">AI · Product · Political Economy</span>
         </div>
@@ -673,7 +885,9 @@
           <span class="proj-year">2017–18</span>
         </div>
         <p class="proj-org">IBM Watson</p>
-        <p class="proj-desc">Designed, pitched and led development of a system generating knowledge graphs from unstructured natural language using several independent Watson services. Backend-agnostic by design — I wrote plugins for Neo4J, SQL, Gremlin and Redis — and led a team building question-answer services on top of it against both Neo4J and Postgres.</p>
+        <div class="proj-desc">
+          <p>Designed, pitched and led development of a system generating knowledge graphs from unstructured natural language using several independent Watson services. Backend-agnostic by design — I wrote plugins for Neo4J, SQL, Gremlin and Redis — and led a team building question-answer services on top of it against both Neo4J and Postgres.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://github.com/taimur38/toomba" target="_blank" rel="noopener">Source ↗</a>
@@ -688,7 +902,9 @@
           <span class="proj-year">2018</span>
         </div>
         <p class="proj-org">Independent · Elixir</p>
-        <p class="proj-desc">An attempt to link conversations with data — carrying the agent-in-the-middle idea from Toombot toward grounding what people say in the records that would confirm or contradict it.</p>
+        <div class="proj-desc">
+          <p>An attempt to link conversations with data — carrying the agent-in-the-middle idea from Toombot toward grounding what people say in the records that would confirm or contradict it.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://github.com/taimur38/discourse" target="_blank" rel="noopener">Source ↗</a>
@@ -697,13 +913,15 @@
         </div>
       </article>
 
-      <article class="proj" data-org="ibm" data-theme="graphics" data-type="open-source" data-year="2017" data-title="Kinect and Projection Mapping">
+      <article class="proj" data-org="personal" data-theme="graphics" data-type="open-source" data-year="2017" data-title="Kinect and Projection Mapping">
         <div class="proj-head">
           <h2 class="proj-title">Kinect &amp; Projection Mapping</h2>
           <span class="proj-year">2016–17</span>
         </div>
-        <p class="proj-org">IBM Watson and independent · C++ / C#</p>
-        <p class="proj-desc">A cluster of graphics experiments behind the cognitive environments work: broadcasting Kinect depth streams over websockets, using the viewer's head position as the camera so a flat display reads as a window, and projection mapping onto physical surfaces. Mostly OpenGL and openFrameworks.</p>
+        <p class="proj-org">Independent · C++ / C#</p>
+        <div class="proj-desc">
+          <p>A cluster of graphics experiments behind the cognitive environments work: broadcasting Kinect depth streams over websockets, using the viewer's head position as the camera so a flat display reads as a window, and projection mapping onto physical surfaces. Mostly OpenGL and openFrameworks.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://github.com/taimur38/KinectServer" target="_blank" rel="noopener">KinectServer ↗</a>
@@ -720,7 +938,9 @@
           <span class="proj-year">2018</span>
         </div>
         <p class="proj-org">Independent</p>
-        <p class="proj-desc">Video chat and multiplayer gaming in the browser, in one page.</p>
+        <div class="proj-desc">
+          <p>Video chat and multiplayer gaming in the browser, in one page.</p>
+        </div>
         <div class="proj-foot">
           <span class="proj-links">
             <a href="https://github.com/taimur38/gamechat" target="_blank" rel="noopener">Source ↗</a>
@@ -729,27 +949,31 @@
         </div>
       </article>
 
-      <article class="proj" data-org="parrable" data-theme="consumer" data-type="product" data-year="2014" data-title="Parrable">
+      <article class="proj" data-org="parrable" data-theme="consumer ai" data-type="product org" data-year="2014" data-title="Parrable">
         <div class="proj-head">
           <h2 class="proj-title">Parrable</h2>
           <span class="proj-year">2013–14</span>
         </div>
         <p class="proj-org">VP of Engineering · New York</p>
-        <p class="proj-desc">Led data analysis and advertising operations for several clients, and assisted in fundraising and business development. Converted the Clossit backend and infrastructure to support the pivot from a destination site to advertising, and built customised products on top of it for clients.</p>
+        <div class="proj-desc">
+          <p>Led data analysis and advertising operations for several clients, and assisted in fundraising and business development. Converted the Clossit backend and infrastructure to support the pivot from a destination site to advertising, and built customised products on top of it for clients.</p>
+        </div>
         <div class="proj-foot">
-          <span class="proj-tags">Consumer · Product</span>
+          <span class="proj-tags">Consumer · AI · Product · Org building</span>
         </div>
       </article>
 
-      <article class="proj" data-org="clossit" data-theme="consumer" data-type="product" data-year="2013" data-title="Clossit">
+      <article class="proj" data-org="clossit" data-theme="consumer ai" data-type="product org" data-year="2013" data-title="Clossit">
         <div class="proj-head">
           <h2 class="proj-title">Clossit</h2>
           <span class="proj-year">2011–13</span>
         </div>
         <p class="proj-org">Founder · New York</p>
-        <p class="proj-desc">A consumer site where people browsed a large database of clothes and curated personal collections shared with followers, designed to reflect the social nature of fashion. The system learned preferences from interactions and recommended accordingly. I built android and iOS applications, and led the sale of the company to Parrable in 2013.</p>
+        <div class="proj-desc">
+          <p>A consumer site where people browsed a large database of clothes and curated personal collections shared with followers, designed to reflect the social nature of fashion. The system learned preferences from interactions and recommended accordingly. I built android and iOS applications, and led the sale of the company to Parrable in 2013.</p>
+        </div>
         <div class="proj-foot">
-          <span class="proj-tags">Consumer · Product</span>
+          <span class="proj-tags">Consumer · AI · Product · Org building</span>
         </div>
       </article>
 
@@ -761,9 +985,16 @@
        decades. Built from the same cards, so the filters above apply here too. -->
   <section id="graph-section" hidden>
     <p class="section-head">Projects by theme</p>
-    <svg id="graph" role="img" aria-label="Graph of projects linked to the themes they share"></svg>
-    <p class="g-hint">Hover a node to trace what it connects to. Click a theme to filter by it.</p>
+    <svg id="graph" role="group" aria-label="Graph of projects linked to the themes they share"></svg>
+    <p class="g-hint">Hover a node to trace what it connects to. Click a project to open it; click a theme to filter by it.</p>
   </section>
+
+  <!-- Detail view for a project node. Populated by cloning the card the node
+       was built from, so there is one source of truth for project copy. -->
+  <dialog class="modal" id="node-modal" aria-label="Project detail">
+    <button type="button" class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+    <div class="modal-scroll" id="modal-body"></div>
+  </dialog>
 
   <p class="empty" id="empty" hidden>No projects match those filters.</p>
 
@@ -1057,7 +1288,14 @@
       });
 
       gNodes.forEach(function (n) {
-        var g = el('g', { tabindex: '0' }, 'g-node');
+        var g = el('g', {
+          tabindex: '0',
+          role: 'button',
+          'aria-label': n.kind === 'theme'
+            ? 'Filter by ' + n.label
+            : n.label + ' — open details'
+        }, 'g-node');
+        if (n.kind === 'proj') g.appendChild(el('circle', { r: 13 }, 'g-hit'));
         var shape = el('circle', { r: n.r },
           n.kind === 'theme' ? 'g-theme' : 'g-proj' + (n.card._pinned ? ' pinned' : ''));
         g.appendChild(shape);
@@ -1072,17 +1310,23 @@
         g.addEventListener('mouseleave', function () { lite(null); });
         g.addEventListener('focus', function () { lite(n); });
         g.addEventListener('blur', function () { lite(null); });
-        if (n.kind === 'theme') {
-          g.addEventListener('click', function () {
+        // Activation is a named function rather than a synthetic g.click(),
+        // because click() is an HTMLElement method — SVGGElement has no such
+        // thing, so routing the keyboard through it silently does nothing.
+        function activate() {
+          if (n.kind === 'theme') {
             active.theme = active.theme === n.key ? '' : n.key;
             selects.theme.value = active.theme;
             apply();
             writeUrl();
-          });
-          g.addEventListener('keydown', function (ev) {
-            if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); g.click(); }
-          });
+          } else {
+            openCard(n.card, g);
+          }
         }
+        g.addEventListener('click', activate);
+        g.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); activate(); }
+        });
       });
 
       var alpha = 1;
@@ -1168,6 +1412,80 @@
       });
     }
 
+    // ── Node detail modal ─────────────────────────────────────
+    // A project node is a 4–6px dot whose label only appears on hover, so the
+    // graph can show how the work connects but not what any of it is. Clicking
+    // one reopens its card here — cloned, so the markup above stays the single
+    // source of truth for project copy.
+    var modal = document.getElementById('node-modal');
+    var modalBody = document.getElementById('modal-body');
+    var modalClose = document.getElementById('modal-close');
+    var lastFocus = null;
+
+    function openCard(card, node) {
+      if (!modal || !modal.showModal) return;
+      modalBody.textContent = '';
+
+      var clone = card.cloneNode(true);
+      clone.hidden = false;
+      clone.classList.remove('is-pinned');
+      // The grid clamps descriptions to four lines behind a More toggle. The
+      // modal has the room for the whole thing, so both come off.
+      var desc = clone.querySelector('.proj-desc');
+      if (desc) desc.classList.remove('clamped');
+      var more = clone.querySelector('.more');
+      if (more) more.parentNode.removeChild(more);
+      modalBody.appendChild(clone);
+
+      // Themes are the graph's edges. Offering them as filters is what keeps
+      // the modal a way through the graph rather than a dead end.
+      var themes = card._f.theme.filter(function (t) { return LABELS.theme[t]; });
+      if (themes.length) {
+        var row = document.createElement('p');
+        row.className = 'modal-themes';
+        var lead = document.createElement('span');
+        lead.textContent = 'Filter by theme:';
+        row.appendChild(lead);
+        themes.forEach(function (t) {
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.textContent = LABELS.theme[t];
+          b.addEventListener('click', function () {
+            active.theme = active.theme === t ? '' : t;
+            selects.theme.value = active.theme;
+            closeCard();
+            apply();
+            writeUrl();
+          });
+          row.appendChild(b);
+        });
+        modalBody.appendChild(row);
+      }
+
+      lastFocus = node || null;
+      modalBody.scrollTop = 0;
+      modal.showModal();
+    }
+
+    function closeCard() {
+      if (modal && modal.open) modal.close();
+    }
+
+    if (modal) {
+      modalClose.addEventListener('click', closeCard);
+      // A click reported against the dialog itself landed on the backdrop —
+      // the content sits inside .modal-scroll and never reports as the dialog.
+      modal.addEventListener('click', function (ev) {
+        if (ev.target === modal) closeCard();
+      });
+      // Esc closes natively; this just returns the caret to the node it came
+      // from, unless a filter has since rebuilt the graph out from under it.
+      modal.addEventListener('close', function () {
+        if (lastFocus && lastFocus.isConnected) lastFocus.focus();
+        lastFocus = null;
+      });
+    }
+
     // ── View switching ────────────────────────────────────────
     var view = 'cards';
     var tabCards = document.getElementById('view-cards');
@@ -1222,18 +1540,31 @@
       writeUrl();
     });
 
-    // ── Description clamping ──────────────────────────────────
+    // ── Description clamping and screenshots ──────────────────
+    // One toggle governs both: it unclamps the description and reveals the
+    // shot, so a card has a single control rather than two.
     cards.forEach(function (c) {
       var d = c.querySelector('.proj-desc');
+      var paras = d.querySelectorAll('p');
+      var shot = c.querySelector('.proj-shot');
       d.classList.add('clamped');
-      if (d.scrollHeight - d.clientHeight < 4) { d.classList.remove('clamped'); return; }
+      // Measure the lead paragraph, since that is what carries the clamp; a
+      // second paragraph is hidden whether or not the first one overflows.
+      var hidesText = (paras[0].scrollHeight - paras[0].clientHeight >= 4) || paras.length > 1;
+      if (!hidesText) d.classList.remove('clamped');
+      // Nothing hidden means no toggle. A card with a shot always gets one,
+      // even when its description fits, since the toggle is what reveals it.
+      if (!hidesText && !shot) return;
+
       var btn = document.createElement('button');
       btn.className = 'more';
       btn.type = 'button';
       btn.textContent = 'More';
       btn.setAttribute('aria-expanded', 'false');
       btn.addEventListener('click', function () {
-        var open = d.classList.toggle('clamped') === false;
+        var open = btn.getAttribute('aria-expanded') === 'false';
+        if (hidesText) d.classList.toggle('clamped', !open);
+        c.classList.toggle('shot-open', open);
         btn.textContent = open ? 'Less' : 'More';
         btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       });

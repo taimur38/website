@@ -3,9 +3,9 @@
 > Researcher and engineer working on economic growth in developing countries. Research
 > affiliation: Harvard Growth Lab (Kennedy School), focused on agriculture, cities and
 > political economy, using growth diagnostics and economic complexity. Also CTO of Beaj,
-> which delivers education over WhatsApp to underserved populations.
+> which uses AI and WhatsApp to teach underserved populations.
 
-Interactive research tools are deployed on subdomains of taimur.sh and listed under Projects.
+Interactive research tools are listed under Projects; most are deployed on subdomains of taimur.sh.
 
 ## Pages
 
@@ -16,7 +16,7 @@ Interactive research tools are deployed on subdomains of taimur.sh and listed un
 
 ## Projects
 
-- [Morocco Cities Interactive Report](https://morocco-cities.taimur.sh): Spatial-equilibrium reading of Morocco's cities, 2014–2024. Cities defined as labour markets (functional urban areas) rather than administrative units; covers migration, wages, employment composition and complexity. EN/FR.
+- [Morocco Cities Interactive Report](https://economic-complexity-unit.com/#cities): Spatial-equilibrium reading of Morocco's cities, 2014–2024. Cities defined as labour markets (functional urban areas) rather than administrative units; covers migration, wages, employment composition and complexity. EN/FR.
 - [Global AEZ Yield Frontier](https://agri.taimur.sh): Country × agro-ecological zone typology from FAO GAEZ data. Benchmarks realised yields against a within-cluster frontier so comparisons hold thermal regime and moisture band fixed.
 - [Institutions and Political Economy](https://institutions.taimur.sh): Under construction. Part of a research agenda on bringing political economy into growth diagnostics, with political settlement analysis as the foundational model. Collects indicators on political settlements, state capacity and political institutions, and matches countries to institutional peers by distance on V-Dem.
 
